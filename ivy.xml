@@ -1,0 +1,7 @@
+<ivy-module version="2.0">
+    <info organisation="org.apache" module="canopy"/>
+    <dependencies>
+        <dependency org="com.google.guava" name="guava" rev="20.0"/>
+        <dependency org="com.github.haifengl" name="smile-core" rev="1.4.0"/>
+    </dependencies>
+</ivy-module>

@@ -26,10 +26,9 @@ package edu.cmu.sv.isstac.cogito;
 
 import com.google.common.base.Objects;
 
-import java.io.Serializable;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import gov.nasa.jpf.vm.ChoiceGenerator;
 
@@ -38,31 +37,32 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
  *
  */
 public class Path {
-  private LinkedList<Integer> store = new LinkedList<>();
+
+  private LinkedList<Decision> decisions = new LinkedList<>();
 
   public static Path createFrom(ChoiceGenerator<?> cg) {
     Path p = new Path();
     if(cg != null) {
       for(ChoiceGenerator<?> c : cg.getAll()) {
-        p.addChoice(c);
+        p.addDecision(c);
       }
     }
     return p;
   }
 
-  public Path() {
-
-  }
-
-  public void addChoice(ChoiceGenerator<?> cg) {
+  private void addDecision(ChoiceGenerator<?> cg) {
     int choice = getCurrentChoiceOfCG(cg);
     assert choice >= 0;
-    addChoice(choice);
+
+    Conditional cond = Conditional.createFrom(cg.getInsn());
+
+    Decision dec = Decision.createFrom(cond, choice);
+
+    addDecision(dec);
   }
 
-  //A bit expensive since store is a linked list at the moment
-  public int getChoice(int index) {
-    return this.store.get(index);
+  public Decision getDecision(int index) {
+    return this.decisions.get(index);
   }
 
   public boolean isPrefix(Path other) {
@@ -70,7 +70,7 @@ public class Path {
       return false;
     }
     for(int i = 0; i < other.length(); i++) {
-      if(!store.get(i).equals(other.store.get(i))) {
+      if(!decisions.get(i).equals(other.decisions.get(i))) {
         return false;
       }
     }
@@ -78,15 +78,15 @@ public class Path {
   }
 
   public int length() {
-    return store.size();
+    return decisions.size();
   }
 
-  public void addChoice(int choice) {
-    store.add(choice);
+  public void addDecision(Decision decision) {
+    decisions.add(decision);
   }
 
-  public int removeLast() {
-    return store.removeLast();
+  public Decision removeLastDecision() {
+    return decisions.removeLast();
   }
 
   private static int getCurrentChoiceOfCG(ChoiceGenerator<?> cg) {
@@ -103,28 +103,33 @@ public class Path {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(store);
+    return Objects.hashCode(decisions);
   }
   
   @Override
   public boolean equals(Object other) {
     if(other == null) return false;
-    if(getClass() != other.getClass()) return false;
+    if(!(other instanceof Path)) return false;
+
     Path otherPath = (Path) other;
-    return Objects.equal(this.store, otherPath.store);
+    return Objects.equal(this.decisions, otherPath.decisions);
   }
-  
+
+  public String toSimplePathString() {
+    return stringifyPath(dec -> String.valueOf(dec.getChoice()));
+  }
+
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("[");
-    Iterator<Integer> iter = store.iterator();
-    while(iter.hasNext()) {
-      sb.append(iter.next());
-      if(iter.hasNext())
-        sb.append(",");
-    }
-    sb.append("]");
-    return sb.toString();
+    return stringifyPath(dec -> dec.toString());
+  }
+
+  private String stringifyPath(Function<Decision, String> mapper) {
+    String result = decisions
+        .stream()
+        .map(mapper)
+        .collect(Collectors.joining(", ", "[", "]"));
+
+    return result;
   }
 }

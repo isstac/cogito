@@ -97,8 +97,9 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
 
   @Override
   public void searchFinished(Search search) {
+
     System.out.println("Worst case cost: " + maxCost);
 
-    System.out.println("Worst case path: " + maxPaths.iterator().next().toString());
+    System.out.println("Worst case path: " + maxPaths.iterator().next().toSimplePathString());
   }
 }

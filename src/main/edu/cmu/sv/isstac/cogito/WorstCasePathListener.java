@@ -35,8 +35,8 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.Path;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Transition;
 import gov.nasa.jpf.vm.VM;
 
 /**
@@ -85,12 +85,20 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
       long cost = this.costModel.getCost(search);
       //TODO: update cost to be Comparable instead
       if(cost >= maxCost) {
-        maxCost = cost;
         if(cost > maxCost) {
           maxPaths.clear();
         }
-        maxPaths.add(search.getVM().getPath());
+        maxCost = cost;
+        Path maxPath = Path.createFrom(search.getVM().getChoiceGenerator());
+        maxPaths.add(maxPath);
       }
     }
+  }
+
+  @Override
+  public void searchFinished(Search search) {
+    System.out.println("Worst case cost: " + maxCost);
+
+    System.out.println("Worst case path: " + maxPaths.iterator().next().toString());
   }
 }

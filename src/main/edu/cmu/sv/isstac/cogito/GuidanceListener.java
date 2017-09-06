@@ -24,6 +24,8 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.util.Arrays;
+
 import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import gov.nasa.jpf.PropertyListenerAdapter;
@@ -58,7 +60,13 @@ public class GuidanceListener extends PropertyListenerAdapter {
       Path path = Path.createFrom(prevCg);
       double[] data = dataGenerator.generateFeatures(path);
 
-      int choice = classifier.predict(conditional, data);
+
+
+      //TODO: Assume for now that there are only two classes
+      double[] posterior = new double[2];
+
+      int choice = classifier.predict(conditional, data, posterior);
+//      System.out.println("Posterior: " + Arrays.toString(posterior));
       cg.select(choice);
     }
   }

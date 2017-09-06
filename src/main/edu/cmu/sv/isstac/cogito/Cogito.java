@@ -24,7 +24,9 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
@@ -49,15 +51,23 @@ public class Cogito implements JPFShell {
   @Override
   public void start(String[] args) {
 
-    JPF jpf = new JPF(config);
+    Collection<Path> maxPaths = new ArrayList<>();
+    int[] inputSizes = config.getIntArray("cogito.training.target.args");
 
-    WorstCasePathListener worstCasePathListener = new WorstCasePathListener(config);
-    jpf.addListener(worstCasePathListener);
+    for(int inputSize = inputSizes[0]; inputSize <= inputSizes[1]; inputSize++) {
+      WorstCasePathListener worstCasePathListener = new WorstCasePathListener(config);
 
-    jpf.run();
+      config.setProperty("target.args", inputSize + "");
+      JPF jpf = new JPF(config);
+      jpf.addListener(worstCasePathListener);
+      jpf.run();
+
+      maxPaths.addAll(worstCasePathListener.getMaxPaths());
+    }
+
 
     DataGenerator dataGenerator = new DataGenerator();
-    Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(worstCasePathListener.getMaxPaths());
+    Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(maxPaths);
 
     CogitoClassifier classifier = new CogitoClassifier();
     classifier.train(dataSets);
@@ -67,14 +77,15 @@ public class Cogito implements JPFShell {
     long[] costs = new long[maxInputSize];
     for(int i = 1; i < maxInputSize; i++) {
       config.setProperty("target.args", i + "");
+      WorstCasePathListener guidedWcListener = new WorstCasePathListener(config);
       GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
       JPF guidedJPF = new JPF(config);
       guidedJPF.addListener(guidanceListener);
-      guidedJPF.addListener(worstCasePathListener);
+      guidedJPF.addListener(guidedWcListener);
 
       guidedJPF.run();
 
-      costs[i] = worstCasePathListener.getMaxCost();
+      costs[i] = guidedWcListener.getMaxCost();
     }
 
     String costStr = Arrays.toString(costs).replace(", ", "\n");

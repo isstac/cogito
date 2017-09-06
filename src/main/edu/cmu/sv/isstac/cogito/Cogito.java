@@ -24,9 +24,12 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import edu.cmu.sv.isstac.cogito.ml.Training;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFShell;
+import smile.classification.SVM;
+import smile.math.kernel.GaussianKernel;
 
 /**
  * @author Kasper Luckow
@@ -48,5 +51,12 @@ public class Cogito implements JPFShell {
     jpf.addListener(worstCasePathListener);
 
     jpf.run();
+
+    Training training = new Training();
+    for(Path p : worstCasePathListener.getMaxPaths())
+      training.addToTraining(p);
+
+    training.toArray();
+    System.out.println("done");
   }
 }

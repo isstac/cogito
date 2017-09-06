@@ -46,6 +46,11 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
 
   private final CostModel costModel;
   private long maxCost = -1;
+
+  public Set<Path> getMaxPaths() {
+    return maxPaths;
+  }
+
   private Set<Path> maxPaths = new HashSet<>();
 
   public WorstCasePathListener(Config config) {

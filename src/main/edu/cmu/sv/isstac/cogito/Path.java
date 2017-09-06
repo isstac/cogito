@@ -26,7 +26,10 @@ package edu.cmu.sv.isstac.cogito;
 
 import com.google.common.base.Objects;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,9 +39,10 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
  * @author Kasper Luckow
  *
  */
-public class Path {
+public class Path implements Iterable<Decision> {
 
   private LinkedList<Decision> decisions = new LinkedList<>();
+  private Set<Conditional> uniqueConditionals = new HashSet<>();
 
   public static Path createFrom(ChoiceGenerator<?> cg) {
     Path p = new Path();
@@ -55,6 +59,7 @@ public class Path {
     assert choice >= 0;
 
     Conditional cond = Conditional.createFrom(cg.getInsn());
+    uniqueConditionals.add(cond);
 
     Decision dec = Decision.createFrom(cond, choice);
 
@@ -77,16 +82,16 @@ public class Path {
     return true;
   }
 
+  public Set<Conditional> getUniqueConditionals() {
+    return uniqueConditionals;
+  }
+
   public int length() {
     return decisions.size();
   }
 
   public void addDecision(Decision decision) {
     decisions.add(decision);
-  }
-
-  public Decision removeLastDecision() {
-    return decisions.removeLast();
   }
 
   private static int getCurrentChoiceOfCG(ChoiceGenerator<?> cg) {
@@ -131,5 +136,10 @@ public class Path {
         .collect(Collectors.joining(", ", "[", "]"));
 
     return result;
+  }
+
+  @Override
+  public Iterator<Decision> iterator() {
+    return decisions.iterator();
   }
 }

@@ -75,7 +75,10 @@ public class CogitoClassifier {
         //If there are more than two classes, we will train a logistic regression model
         LogisticRegression lr = new LogisticRegression(
             entry.getValue().getXs(),
-            entry.getValue().getYs());
+            entry.getValue().getYs(),
+            0.1D,
+            0.1D,
+            500);
 
         classifiers.put(entry.getKey(), lr);
       }
@@ -93,11 +96,9 @@ public class CogitoClassifier {
     }
   }
 
-  public int predict(Conditional conditional, double[] data) {
+  public int predict(Conditional conditional, double[] data, double[] posterior) {
     SoftClassifier<double[]> classifier = this.classifiers.get(conditional);
 
-    //TODO: Assume for now that there are only two classes
-    double[] posterior = new double[2];
     return classifier.predict(data, posterior);
   }
 }

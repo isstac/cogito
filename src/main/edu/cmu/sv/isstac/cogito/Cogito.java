@@ -32,10 +32,11 @@ import java.util.Map;
 import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
+import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFShell;
-import smile.classification.LogisticRegression;
 
 /**
  * @author Kasper Luckow

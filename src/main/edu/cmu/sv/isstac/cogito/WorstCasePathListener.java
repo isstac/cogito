@@ -29,6 +29,7 @@ import java.util.Set;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.cost.DepthCostModel;
+import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.search.Search;
@@ -36,7 +37,6 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.Transition;
 import gov.nasa.jpf.vm.VM;
 
 /**

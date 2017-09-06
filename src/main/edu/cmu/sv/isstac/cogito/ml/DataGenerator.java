@@ -26,16 +26,15 @@ package edu.cmu.sv.isstac.cogito.ml;
 
 import com.google.common.base.Preconditions;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import edu.cmu.sv.isstac.cogito.Conditional;
-import edu.cmu.sv.isstac.cogito.Decision;
-import edu.cmu.sv.isstac.cogito.Path;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
+import edu.cmu.sv.isstac.cogito.structure.Decision;
+import edu.cmu.sv.isstac.cogito.structure.Path;
 
 /**
  * @author Kasper Luckow

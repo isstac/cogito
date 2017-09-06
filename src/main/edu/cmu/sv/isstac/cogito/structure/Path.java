@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito;
+package edu.cmu.sv.isstac.cogito.structure;
 
 import com.google.common.base.Objects;
 

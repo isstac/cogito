@@ -24,15 +24,14 @@
 
 package edu.cmu.sv.isstac.cogito;
 
-import java.util.Arrays;
-
 import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
+import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.VM;
-import smile.classification.Classifier;
 
 /**
  * @author Kasper Luckow

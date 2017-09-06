@@ -25,14 +25,12 @@
 package edu.cmu.sv.isstac.cogito.ml;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import edu.cmu.sv.isstac.cogito.Conditional;
-import smile.classification.Classifier;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import smile.classification.LogisticRegression;
 import smile.classification.SoftClassifier;
 

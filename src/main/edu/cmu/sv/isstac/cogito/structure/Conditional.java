@@ -22,11 +22,8 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito;
+package edu.cmu.sv.isstac.cogito.structure;
 
-import com.sun.org.apache.bcel.internal.generic.BranchInstruction;
-
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;

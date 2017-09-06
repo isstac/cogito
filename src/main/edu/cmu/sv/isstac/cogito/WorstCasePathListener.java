@@ -96,6 +96,10 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
     }
   }
 
+  public long getMaxCost() {
+    return maxCost;
+  }
+
   public Set<Path> getMaxPaths() {
     return maxPaths;
   }

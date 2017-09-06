@@ -37,8 +37,8 @@ public class DataSet {
     this.instances.add(instance);
   }
 
-  public int[][] getXs() {
-    int[][] xs = new int[instances.size()][];
+  public double[][] getXs() {
+    double[][] xs = new double[instances.size()][];
     int i = 0;
     for(Instance instance : instances) {
       xs[i++] = instance.getX();

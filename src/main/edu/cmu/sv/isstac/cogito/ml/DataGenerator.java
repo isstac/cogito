@@ -40,44 +40,54 @@ import edu.cmu.sv.isstac.cogito.Path;
 /**
  * @author Kasper Luckow
  */
-public class Training {
-  private Collection<Path> wcPaths = new ArrayList<>();
+public class DataGenerator {
+
+  //TODO: This class must be refactored
+
   private Map<Conditional, Integer> dec2idx = new HashMap<>();
   private int nextIndex = 0;
 
-  public void addToTraining(Path path) {
-    wcPaths.add(path);
-  }
+  private Set<Conditional> conditionals = new HashSet<>();
 
-  public Map<Conditional, DataSet> toDataSet() {
-    Set<Conditional> conditionals = new HashSet<>();
-    for(Path p : wcPaths) {
+  public Map<Conditional, DataSet> generateTrainingData(Collection<Path> paths) {
+    for(Path p : paths) {
       conditionals.addAll(p.getUniqueConditionals());
     }
 
     Map<Conditional, DataSet> datasets = new HashMap<>();
 
-    for(Path p : wcPaths) {
-      int[] data = new int[conditionals.size() * 2];
-      for(Decision d : p) {
-        DataSet decisionTrainingData = datasets.get(d.getCond());
+    for(Path path : paths) {
+      double[] data = new double[conditionals.size() * 2];
+      for(Decision decision : path) {
+        DataSet decisionTrainingData = datasets.get(decision.getCond());
         if(decisionTrainingData == null) {
           decisionTrainingData = new DataSet();
-          datasets.put(d.getCond(), decisionTrainingData);
+          datasets.put(decision.getCond(), decisionTrainingData);
         }
-        Instance instance = new Instance(data, d.getChoice());
+        Instance instance = new Instance(data, decision.getChoice());
         decisionTrainingData.add(instance);
 
-        int[] newData = new int[conditionals.size() * 2];
+        double[] newData = new double[conditionals.size() * 2];
         java.lang.System.arraycopy(data, 0, newData, 0, data.length);
         data = newData;
 
-        int idx = getIdx(d);
+        int idx = getIdx(decision);
         data[idx] = data[idx] + 1;
       }
     }
 
     return datasets;
+  }
+
+  public double[] generateFeatures(Path path) {
+
+    double[] data = new double[conditionals.size() * 2];
+    for(Decision decision : path) {
+      int idx = getIdx(decision);
+      data[idx] = data[idx] + 1;
+    }
+
+    return data;
   }
 
   private int getIdx(Decision decision) {

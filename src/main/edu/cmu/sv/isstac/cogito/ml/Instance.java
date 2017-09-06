@@ -24,24 +24,31 @@
 
 package edu.cmu.sv.isstac.cogito.ml;
 
+import java.util.Arrays;
+
 /**
  * @author Kasper Luckow
  */
 public class Instance {
 
-  private final int[] x;
+  private final double[] x;
   private final int y;
 
-  public Instance(int[] x, int y) {
+  public Instance(double[] x, int y) {
     this.x = x;
     this.y = y;
   }
 
-  public int[] getX() {
+  public double[] getX() {
     return x;
   }
 
   public int getY() {
     return y;
+  }
+
+  @Override
+  public String toString() {
+    return Arrays.toString(x) + "->" + y;
   }
 }

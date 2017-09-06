@@ -24,10 +24,16 @@
 
 package edu.cmu.sv.isstac.cogito;
 
-import edu.cmu.sv.isstac.cogito.ml.Training;
+import java.util.Arrays;
+import java.util.Map;
+
+import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
+import edu.cmu.sv.isstac.cogito.ml.DataSet;
+import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFShell;
+import smile.classification.LogisticRegression;
 
 /**
  * @author Kasper Luckow
@@ -50,10 +56,30 @@ public class Cogito implements JPFShell {
 
     jpf.run();
 
-    Training training = new Training();
-    for(Path p : worstCasePathListener.getMaxPaths())
-      training.addToTraining(p);
+    DataGenerator dataGenerator = new DataGenerator();
+    Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(worstCasePathListener.getMaxPaths());
 
-    training.toDataSet();
+    CogitoClassifier classifier = new CogitoClassifier();
+    classifier.train(dataSets);
+
+    //TODO: put this into the option object
+    int maxInputSize = config.getInt("cogito.predict.target.args");
+    long[] costs = new long[maxInputSize];
+    for(int i = 1; i < maxInputSize; i++) {
+      config.setProperty("target.args", i + "");
+      GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
+      JPF guidedJPF = new JPF(config);
+      guidedJPF.addListener(guidanceListener);
+      guidedJPF.addListener(worstCasePathListener);
+
+      guidedJPF.run();
+
+      costs[i] = worstCasePathListener.getMaxCost();
+    }
+
+    String costStr = Arrays.toString(costs).replace(", ", "\n");
+
+    System.out.println(costStr);
+    System.out.println("Done");
   }
 }

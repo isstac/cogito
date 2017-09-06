@@ -22,38 +22,37 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito;
+package edu.cmu.sv.isstac.cogito.ml;
 
-import edu.cmu.sv.isstac.cogito.ml.Training;
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFShell;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author Kasper Luckow
  */
-public class Cogito implements JPFShell {
+public class DataSet {
+  private Collection<Instance> instances = new ArrayList<>();
 
-  private final Config config;
-
-  public Cogito(Config config) {
-    this.config = config;
+  public void add(Instance instance) {
+    this.instances.add(instance);
   }
 
-  @Override
-  public void start(String[] args) {
-
-    JPF jpf = new JPF(config);
-
-    WorstCasePathListener worstCasePathListener = new WorstCasePathListener(config);
-    jpf.addListener(worstCasePathListener);
-
-    jpf.run();
-
-    Training training = new Training();
-    for(Path p : worstCasePathListener.getMaxPaths())
-      training.addToTraining(p);
-
-    training.toDataSet();
+  public int[][] getXs() {
+    int[][] xs = new int[instances.size()][];
+    int i = 0;
+    for(Instance instance : instances) {
+      xs[i++] = instance.getX();
+    }
+    return xs;
   }
+
+  public int[] getYs() {
+    int[] ys = new int[instances.size()];
+    int i = 0;
+    for(Instance instance : instances) {
+      ys[i++] = instance.getY();
+    }
+    return ys;
+  }
+
 }

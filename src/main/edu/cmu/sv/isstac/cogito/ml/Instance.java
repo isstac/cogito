@@ -22,38 +22,26 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito;
-
-import edu.cmu.sv.isstac.cogito.ml.Training;
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFShell;
+package edu.cmu.sv.isstac.cogito.ml;
 
 /**
  * @author Kasper Luckow
  */
-public class Cogito implements JPFShell {
+public class Instance {
 
-  private final Config config;
+  private final int[] x;
+  private final int y;
 
-  public Cogito(Config config) {
-    this.config = config;
+  public Instance(int[] x, int y) {
+    this.x = x;
+    this.y = y;
   }
 
-  @Override
-  public void start(String[] args) {
+  public int[] getX() {
+    return x;
+  }
 
-    JPF jpf = new JPF(config);
-
-    WorstCasePathListener worstCasePathListener = new WorstCasePathListener(config);
-    jpf.addListener(worstCasePathListener);
-
-    jpf.run();
-
-    Training training = new Training();
-    for(Path p : worstCasePathListener.getMaxPaths())
-      training.addToTraining(p);
-
-    training.toDataSet();
+  public int getY() {
+    return y;
   }
 }

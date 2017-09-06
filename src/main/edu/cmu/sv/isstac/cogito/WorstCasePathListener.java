@@ -47,10 +47,6 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
   private final CostModel costModel;
   private long maxCost = -1;
 
-  public Set<Path> getMaxPaths() {
-    return maxPaths;
-  }
-
   private Set<Path> maxPaths = new HashSet<>();
 
   public WorstCasePathListener(Config config) {
@@ -100,11 +96,7 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
     }
   }
 
-  @Override
-  public void searchFinished(Search search) {
-
-    System.out.println("Worst case cost: " + maxCost);
-
-    System.out.println("Worst case path: " + maxPaths.iterator().next().toSimplePathString());
+  public Set<Path> getMaxPaths() {
+    return maxPaths;
   }
 }

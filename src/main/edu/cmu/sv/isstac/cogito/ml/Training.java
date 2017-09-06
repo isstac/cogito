@@ -49,25 +49,24 @@ public class Training {
     wcPaths.add(path);
   }
 
-  public Map<Conditional, int[][]> toArray() {
+  public Map<Conditional, DataSet> toDataSet() {
     Set<Conditional> conditionals = new HashSet<>();
     for(Path p : wcPaths) {
       conditionals.addAll(p.getUniqueConditionals());
     }
 
-    Map<Conditional, Collection<int[]>> td = new HashMap<>();
+    Map<Conditional, DataSet> datasets = new HashMap<>();
 
-//    int[][] trainingData = new int[wcPaths.size()][conditionals.size() * 2];
-    int row = 0;
     for(Path p : wcPaths) {
       int[] data = new int[conditionals.size() * 2];
       for(Decision d : p) {
-        Collection<int[]> decisionTrainingData = td.get(d.getCond());
+        DataSet decisionTrainingData = datasets.get(d.getCond());
         if(decisionTrainingData == null) {
-          decisionTrainingData = new ArrayList<>();
-          td.put(d.getCond(), decisionTrainingData);
+          decisionTrainingData = new DataSet();
+          datasets.put(d.getCond(), decisionTrainingData);
         }
-        decisionTrainingData.add(data);
+        Instance instance = new Instance(data, d.getChoice());
+        decisionTrainingData.add(instance);
 
         int[] newData = new int[conditionals.size() * 2];
         java.lang.System.arraycopy(data, 0, newData, 0, data.length);
@@ -76,17 +75,9 @@ public class Training {
         int idx = getIdx(d);
         data[idx] = data[idx] + 1;
       }
-//      trainingData[row++] = data;
     }
 
-    Map<Conditional, int[][]> finalArray = new HashMap<>();
-    for(Map.Entry<Conditional, Collection<int[]>> ent : td.entrySet()) {
-      int[][] data = ent.getValue().toArray(new int[ent.getValue().size()][conditionals.size() *
-          2]);
-      finalArray.put(ent.getKey(), data);
-    }
-
-    return finalArray;
+    return datasets;
   }
 
   private int getIdx(Decision decision) {

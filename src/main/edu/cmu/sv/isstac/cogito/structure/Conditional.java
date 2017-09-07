@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import gov.nasa.jpf.jvm.bytecode.IfInstruction;
+
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -45,7 +47,7 @@ public class Conditional {
   private static Map<String, Map<String, Map<Integer, Conditional>>> cache = new HashMap<>();
 
   //TODO: Maybe this is premature optimization...
-  public static Conditional createFrom(Instruction instruction) {
+  public static Conditional createFrom(IfInstruction instruction) {
     String cl = getClassName(instruction);
     String mt = getMethodName(instruction);
     int index = getIndex(instruction);

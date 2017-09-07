@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 
 /**
@@ -58,7 +59,9 @@ public class Path implements Iterable<Decision> {
     int choice = getCurrentChoiceOfCG(cg);
     assert choice >= 0;
 
-    Conditional cond = Conditional.createFrom(cg.getInsn());
+    //TODO: check that cg instr is actually an ifInstr...
+    IfInstruction instr = (IfInstruction)cg.getInsn();
+    Conditional cond = Conditional.createFrom(instr);
     uniqueConditionals.add(cond);
 
     Decision dec = Decision.createFrom(cond, choice);

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
@@ -51,12 +52,23 @@ public class Cogito implements JPFShell {
 
   @Override
   public void start(String[] args) {
+    if(!Options.valid(config)) {
+      Options.printConfigurations();
+      return;
+    }
 
     Collection<Path> maxPaths = new ArrayList<>();
-    int[] inputSizes = config.getIntArray("cogito.training.target.args");
 
+    CostModel costModel = config.getInstance(Options.COST_MODEL,
+        CostModel.class, Options.DEFAULT_COST_MODEL);
+
+    WorstCasePathListener.Factory wcpListenerFactory =
+        new WorstCasePathListener.Factory(costModel);
+
+
+    int[] inputSizes = config.getIntArray(Options.TRAINING_TARGET_ARGS);
     for(int inputSize = inputSizes[0]; inputSize <= inputSizes[1]; inputSize++) {
-      WorstCasePathListener worstCasePathListener = new WorstCasePathListener(config);
+      WorstCasePathListener worstCasePathListener = wcpListenerFactory.build();
 
       config.setProperty("target.args", inputSize + "");
       JPF jpf = new JPF(config);
@@ -74,11 +86,11 @@ public class Cogito implements JPFShell {
     classifier.train(dataSets);
 
     //TODO: put this into the option object
-    int maxInputSize = config.getInt("cogito.predict.target.args");
+    int maxInputSize = config.getInt(Options.PREDICTION_TARGET_ARGS);
     long[] costs = new long[maxInputSize];
     for(int i = 1; i < maxInputSize; i++) {
       config.setProperty("target.args", i + "");
-      WorstCasePathListener guidedWcListener = new WorstCasePathListener(config);
+      WorstCasePathListener guidedWcListener = wcpListenerFactory.build();
       GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
       JPF guidedJPF = new JPF(config);
       guidedJPF.addListener(guidanceListener);

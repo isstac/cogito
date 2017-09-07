@@ -44,14 +44,25 @@ import gov.nasa.jpf.vm.VM;
  */
 public class WorstCasePathListener extends PropertyListenerAdapter {
 
+  public static class Factory {
+    private final CostModel costModel;
+
+    public Factory(CostModel costModel) {
+      this.costModel = costModel;
+    }
+
+    public WorstCasePathListener build() {
+      return new WorstCasePathListener(costModel);
+    }
+  }
+
   private final CostModel costModel;
   private long maxCost = -1;
 
-  private Set<Path> maxPaths = new HashSet<>();
+  private final Set<Path> maxPaths = new HashSet<>();
 
-  public WorstCasePathListener(Config config) {
-    this.costModel = config.getInstance(Options.COST_MODEL, CostModel.class,
-        DepthCostModel.class.getName());
+  private WorstCasePathListener(CostModel costModel) {
+    this.costModel = costModel;
   }
 
   @Override

@@ -29,6 +29,7 @@ import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.PropertyListenerAdapter;
+import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.VM;
@@ -51,7 +52,9 @@ public class GuidanceListener extends PropertyListenerAdapter {
     ChoiceGenerator<?> cg = vm.getSystemState().getChoiceGenerator();
     if(cg instanceof PCChoiceGenerator) {
 
-      Conditional conditional = Conditional.createFrom(currentCG.getInsn());
+      //Check instance before typecast
+      IfInstruction instruction = (IfInstruction) currentCG.getInsn();
+      Conditional conditional = Conditional.createFrom(instruction);
 
       ChoiceGenerator<?> prevCg = cg.getPreviousChoiceGeneratorOfType(PCChoiceGenerator.class);
 

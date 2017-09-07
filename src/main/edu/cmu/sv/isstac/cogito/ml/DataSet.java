@@ -24,16 +24,23 @@
 
 package edu.cmu.sv.isstac.cogito.ml;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Kasper Luckow
  */
 public class DataSet {
   private Collection<Instance> instances = new ArrayList<>();
+  private Set<Integer> classes = new HashSet<>();
 
   public void add(Instance instance) {
+    this.classes.add(instance.getY());
     this.instances.add(instance);
   }
 
@@ -53,6 +60,10 @@ public class DataSet {
       ys[i++] = instance.getY();
     }
     return ys;
+  }
+
+  public Collection<Integer> getClasses() {
+    return Collections.unmodifiableSet(classes);
   }
 
 }

@@ -66,44 +66,53 @@ public class Cogito implements JPFShell {
         new WorstCasePathListener.Factory(costModel);
 
 
+    /*
+     * Phase 1: Collect all max paths for input sizes lower-upper.
+     */
     int[] inputSizes = config.getIntArray(Options.TRAINING_TARGET_ARGS);
-    for(int inputSize = inputSizes[0]; inputSize <= inputSizes[1]; inputSize++) {
-      WorstCasePathListener worstCasePathListener = wcpListenerFactory.build();
+    int lower = inputSizes[0], upper = inputSizes[1];
+    for(int inputSize = lower; inputSize <= upper; inputSize++) {
+      WorstCasePathListener wcpListener = wcpListenerFactory.build();
 
       config.setProperty("target.args", inputSize + "");
       JPF jpf = new JPF(config);
-      jpf.addListener(worstCasePathListener);
+      jpf.addListener(wcpListener);
       jpf.run();
 
-      maxPaths.addAll(worstCasePathListener.getMaxPaths());
+      maxPaths.addAll(wcpListener.getMaxPaths());
     }
 
-
+    // Generate training data
     DataGenerator dataGenerator = new DataGenerator();
     Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(maxPaths);
 
     CogitoClassifier classifier = new CogitoClassifier();
+
+    //Train classifier
     classifier.train(dataSets);
 
-    //TODO: put this into the option object
+    /*
+     * Phase 2: Use classifier to resolve decisions
+     */
     int maxInputSize = config.getInt(Options.PREDICTION_TARGET_ARGS);
+
+    //Refactor
     long[] costs = new long[maxInputSize];
     for(int i = 1; i < maxInputSize; i++) {
       config.setProperty("target.args", i + "");
-      WorstCasePathListener guidedWcListener = wcpListenerFactory.build();
+      WorstCasePathListener wcpListener = wcpListenerFactory.build();
       GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
       JPF guidedJPF = new JPF(config);
       guidedJPF.addListener(guidanceListener);
-      guidedJPF.addListener(guidedWcListener);
+      guidedJPF.addListener(wcpListener);
 
       guidedJPF.run();
 
-      costs[i] = guidedWcListener.getMaxCost();
+      costs[i] = wcpListener.getMaxCost();
     }
 
     String costStr = Arrays.toString(costs).replace(", ", "\n");
 
     System.out.println(costStr);
-    System.out.println("Done");
   }
 }

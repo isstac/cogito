@@ -45,31 +45,17 @@ public class CogitoClassifier {
   public void train(Map<Conditional, DataSet> trainingSet) {
     for(Map.Entry<Conditional, DataSet> entry : trainingSet.entrySet()) {
 
-      //TODO: Fix this ugliness. Do not allow this. Seriously
-      List<Integer> classes = new ArrayList<>();
-      for(int y : entry.getValue().getYs()) {
-        classes.add(y);
-      }
-      int uniqueClasses = new HashSet<>(classes).size();
+      int uniqueClasses = entry.getValue().getClasses().size();
       assert uniqueClasses > 0;
-      if(uniqueClasses < 2) { //in this case the predictor can simply return the single class found
 
-        final int singleClass = classes.get(0);
-        classifiers.put(entry.getKey(), new SoftClassifier<double[]>() {
-          @Override
-          public int predict(double[] doubles, double[] doubles2) {
-            //doubles2 is the posterior prob
-            assert doubles2 != null && doubles2.length > 0;
-            doubles2[0] = 1.0;
-            return singleClass;
-          }
+      if(uniqueClasses < 2) {
 
-          @Override
-          public int predict(double[] doubles) {
-            return singleClass;
-          }
-        });
+        //In this case the predictor can simply return the single class found
+        final int singleClass = entry.getValue().getClasses().iterator().next();
+        classifiers.put(entry.getKey(),
+            createDeterministicClassifier(singleClass));
       } else {
+
         //If there are more than two classes, we will train a logistic regression model
         LogisticRegression lr = new LogisticRegression(
             entry.getValue().getXs(),
@@ -80,18 +66,23 @@ public class CogitoClassifier {
 
         classifiers.put(entry.getKey(), lr);
       }
-//
-//      if(entry.getValue().getXs().length > 1) {
-//        LogisticRegression lr = new LogisticRegression(entry.getValue().getXs(), entry.getValue().getYs());
-//        double[] posterior = new double[2];
-//        int y1 = lr.predict(new double[] {1,0,1,0,1,0,0,0}, posterior);//1
-//        int y2 = lr.predict(new double[] {1,0,1,0,1,0,0,1});//1
-//        int y3 = lr.predict(new double[] {1,0,1,0,1,0,0,2});//1
-//        int y4 = lr.predict(new double[] {1,0,1,0,1,0,0,3});//0
-//        System.out.println("predict");
-//      }
-//    }
     }
+  }
+
+  private static SoftClassifier<double[]> createDeterministicClassifier(int singleClass) {
+    return new SoftClassifier<double[]>() {
+      @Override
+      public int predict(double[] data, double[] posteriori) {
+        assert posteriori != null && posteriori.length > 0;
+        posteriori[0] = 1.0;
+        return singleClass;
+      }
+
+      @Override
+      public int predict(double[] data) {
+        return singleClass;
+      }
+    };
   }
 
   public int predict(Conditional conditional, double[] data, double[] posterior) {

@@ -24,6 +24,7 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -95,13 +96,16 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
   public void stateAdvanced(Search search) {
     if(search.isEndState()) {
       long cost = this.costModel.getCost(search);
-      //TODO: update cost to be Comparable instead
+
       if(cost >= maxCost) {
         if(cost > maxCost) {
           maxPaths.clear();
         }
         maxCost = cost;
-        Path maxPath = Path.createFrom(search.getVM().getChoiceGenerator());
+
+        ChoiceGenerator<?> lastCg = search.getVM().getChoiceGenerator();
+
+        Path maxPath = Path.createFrom(lastCg);
         maxPaths.add(maxPath);
       }
     }

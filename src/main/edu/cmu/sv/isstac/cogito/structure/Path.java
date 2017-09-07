@@ -34,7 +34,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import gov.nasa.jpf.jvm.bytecode.IfInstruction;
+import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
 import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.Instruction;
 
 /**
  * @author Kasper Luckow
@@ -48,19 +50,21 @@ public class Path implements Iterable<Decision> {
   public static Path createFrom(ChoiceGenerator<?> cg) {
     Path p = new Path();
     if(cg != null) {
-      for(ChoiceGenerator<?> c : cg.getAll()) {
-        p.addDecision(c);
+
+      // This is crucial: A path is characterized *only* on PC choices. This also means that the
+      // first ThreadChoiceFromSet is skipped
+      for(PCChoiceGenerator pcCg : cg.getAllOfType(PCChoiceGenerator.class)) {
+        p.addDecision(pcCg);
       }
     }
     return p;
   }
 
-  private void addDecision(ChoiceGenerator<?> cg) {
+  private void addDecision(PCChoiceGenerator cg) {
     int choice = getCurrentChoiceOfCG(cg);
     assert choice >= 0;
 
-    //TODO: check that cg instr is actually an ifInstr...
-    IfInstruction instr = (IfInstruction)cg.getInsn();
+    Instruction instr = cg.getInsn();
     Conditional cond = Conditional.createFrom(instr);
     uniqueConditionals.add(cond);
 
@@ -97,7 +101,7 @@ public class Path implements Iterable<Decision> {
     decisions.add(decision);
   }
 
-  private static int getCurrentChoiceOfCG(ChoiceGenerator<?> cg) {
+  private static int getCurrentChoiceOfCG(PCChoiceGenerator cg) {
     //BIG FAT WARNING:
     //This is in general UNSAFE to do,
     //because there is NO guarantee that choices are selected

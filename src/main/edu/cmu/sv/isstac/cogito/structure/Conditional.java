@@ -47,7 +47,9 @@ public class Conditional {
   private static Map<String, Map<String, Map<Integer, Conditional>>> cache = new HashMap<>();
 
   //TODO: Maybe this is premature optimization...
-  public static Conditional createFrom(IfInstruction instruction) {
+  // Sadly, we cannot enforce isntances of IfInstructions, because some PCChoiceGenerators have
+  // INVOKESTATIC associated with them.
+  public static Conditional createFrom(Instruction instruction) {
     String cl = getClassName(instruction);
     String mt = getMethodName(instruction);
     int index = getIndex(instruction);

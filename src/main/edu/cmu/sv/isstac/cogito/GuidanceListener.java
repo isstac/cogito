@@ -32,6 +32,7 @@ import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
 import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 
 /**
@@ -52,8 +53,8 @@ public class GuidanceListener extends PropertyListenerAdapter {
     ChoiceGenerator<?> cg = vm.getSystemState().getChoiceGenerator();
     if(cg instanceof PCChoiceGenerator) {
 
-      //Check instance before typecast
-      IfInstruction instruction = (IfInstruction) currentCG.getInsn();
+
+      Instruction instruction = currentCG.getInsn();
       Conditional conditional = Conditional.createFrom(instruction);
 
       ChoiceGenerator<?> prevCg = cg.getPreviousChoiceGeneratorOfType(PCChoiceGenerator.class);

@@ -24,70 +24,15 @@
 
 package edu.cmu.sv.isstac.cogito.ml;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
-import smile.classification.LogisticRegression;
-import smile.classification.SoftClassifier;
 
 /**
  * @author Kasper Luckow
  */
-public class CogitoClassifier {
-  //TODO: This is just a dummy for now
+public interface CogitoClassifier {
 
-  private Map<Conditional, SoftClassifier<double[]>> classifiers = new HashMap<>();
-
-  public void train(Map<Conditional, DataSet> trainingSet) {
-    for(Map.Entry<Conditional, DataSet> entry : trainingSet.entrySet()) {
-
-      int uniqueClasses = entry.getValue().getClasses().size();
-      assert uniqueClasses > 0;
-
-      if(uniqueClasses < 2) {
-
-        //In this case the predictor can simply return the single class found
-        final int singleClass = entry.getValue().getClasses().iterator().next();
-        classifiers.put(entry.getKey(),
-            createDeterministicClassifier(singleClass));
-      } else {
-
-        //If there are more than two classes, we will train a logistic regression model
-        LogisticRegression lr = new LogisticRegression(
-            entry.getValue().getXs(),
-            entry.getValue().getYs(),
-            0.1D,
-            0.1D,
-            500);
-
-        classifiers.put(entry.getKey(), lr);
-      }
-    }
-  }
-
-  private static SoftClassifier<double[]> createDeterministicClassifier(int singleClass) {
-    return new SoftClassifier<double[]>() {
-      @Override
-      public int predict(double[] data, double[] posteriori) {
-        assert posteriori != null && posteriori.length > 0;
-        posteriori[0] = 1.0;
-        return singleClass;
-      }
-
-      @Override
-      public int predict(double[] data) {
-        return singleClass;
-      }
-    };
-  }
-
-  public int predict(Conditional conditional, double[] data, double[] posterior) {
-    SoftClassifier<double[]> classifier = this.classifiers.get(conditional);
-
-    return classifier.predict(data, posterior);
-  }
+  void train(Map<Conditional, DataSet> trainingSet);
+  int predict(Conditional conditional, double[] data, double[] posterior);
 }

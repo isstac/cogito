@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
-import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
+import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
@@ -86,7 +86,7 @@ public class Cogito implements JPFShell {
     DataGenerator dataGenerator = new DataGenerator();
     Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(maxPaths);
 
-    CogitoClassifier classifier = new CogitoClassifier();
+    LogisticRegressionClassifier classifier = new LogisticRegressionClassifier();
 
     //Train classifier
     classifier.train(dataSets);

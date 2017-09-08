@@ -1,0 +1,75 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2017 Carnegie Mellon University.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package edu.cmu.sv.isstac.cogito.ml;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
+import smile.classification.LogisticRegression;
+import smile.classification.SoftClassifier;
+
+/**
+ * @author Kasper Luckow
+ */
+public class LogisticRegressionClassifier implements CogitoClassifier {
+  //TODO: This is just a dummy for now
+
+  private Map<Conditional, SoftClassifier<double[]>> classifiers = new HashMap<>();
+
+  @Override
+  public void train(Map<Conditional, DataSet> trainingSet) {
+    for(Map.Entry<Conditional, DataSet> entry : trainingSet.entrySet()) {
+
+      int uniqueClasses = entry.getValue().getClasses().size();
+      assert uniqueClasses > 0;
+
+      if(uniqueClasses < 2) {
+
+        //In this case the predictor can simply return the single class found
+        final int singleClass = entry.getValue().getClasses().iterator().next();
+        classifiers.put(entry.getKey(), DeterministicClassifier.create(singleClass));
+      } else {
+
+        //If there are more than two classes, we will train a logistic regression model
+        LogisticRegression lr = new LogisticRegression(
+            entry.getValue().getXs(),
+            entry.getValue().getYs(),
+            0.1D,
+            0.1D,
+            500);
+
+        classifiers.put(entry.getKey(), lr);
+      }
+    }
+  }
+
+  @Override
+  public int predict(Conditional conditional, double[] data, double[] posterior) {
+    SoftClassifier<double[]> classifier = this.classifiers.get(conditional);
+
+    return classifier.predict(data, posterior);
+  }
+}

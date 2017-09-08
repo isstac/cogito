@@ -24,12 +24,11 @@
 
 package edu.cmu.sv.isstac.cogito;
 
-import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
+import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
@@ -41,9 +40,9 @@ import gov.nasa.jpf.vm.VM;
 public class GuidanceListener extends PropertyListenerAdapter {
 
   private final DataGenerator dataGenerator;
-  private final CogitoClassifier classifier;
+  private final LogisticRegressionClassifier classifier;
 
-  public GuidanceListener(DataGenerator dataGenerator, CogitoClassifier classifier) {
+  public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier) {
     this.dataGenerator = dataGenerator;
     this.classifier = classifier;
   }

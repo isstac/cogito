@@ -31,6 +31,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
@@ -64,6 +65,16 @@ public class InstructionsModel implements CostModel {
 
   @Override
   public void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject) {
+
+  }
+
+  @Override
+  public void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod) {
+
+  }
+
+  @Override
+  public void methodExited(VM vm, ThreadInfo currentThread, MethodInfo exitedMethod) {
 
   }
 

@@ -63,7 +63,6 @@ public class Options {
 
   private static final String TARGET_ARGS = ".target.args";
 
-
   //Exposed
   public static final String VISUALIZE = CONFIG_PREFIX + ".visualize";
   public static final boolean DEFAULT_VISUALIZE = false;
@@ -73,7 +72,7 @@ public class Options {
 
   public static final String COST_MODEL = CONFIG_PREFIX + ".costmodel";
   public static final String DEFAULT_COST_MODEL = DepthCostModel.class.getName();
-
+  public static final String MEASURED_METHOD = COST_MODEL + ".measuredmethod";
 
   //List of options
   private static List<ConfigDescription> configs = new ArrayList<>();
@@ -86,6 +85,11 @@ public class Options {
     configs.add(create(COST_MODEL,
         "Cost model to use. Must be an implementation of " + CostModel.class.getCanonicalName() +
         ". Default is " + DEFAULT_COST_MODEL));
+    configs.add(create(MEASURED_METHOD, "Simpple method name e.g. com.example.method that " +
+        "specifies where cost should start accumulating. Does not support overloaded methods. " +
+        "Currently only works for " + DepthCostModel.class.getName()));
+    configs.add(create(VISUALIZE, "Visualize max costs for all input sizes during guided search." +
+        " Will also generate prediction models and plot them. Default is " + DEFAULT_VISUALIZE));
   }
 
   public static boolean valid(Config config) {

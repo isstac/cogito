@@ -24,11 +24,22 @@
 
 package edu.cmu.sv.isstac.cogito.cost;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Logger;
+
+import edu.cmu.sv.isstac.cogito.Options;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
@@ -36,19 +47,113 @@ import gov.nasa.jpf.vm.VM;
  * @author Kasper Luckow
  */
 public class DepthCostModel implements CostModel {
+  private static final Logger LOGGER = JPFLogger.getLogger(DepthCostModel.class.getName());
 
-  @Override
-  public void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG) {
+  // If we are just targeting symbolic.method, then we simply use the
+  // depth obtained from the vm object. If there is a measured method, then we iterate over the
+  // CGs until we reach one that is
+  private interface DepthComputation {
+    long compute(Search search);
+    void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod);
+  }
+
+  //This is the "standard" depth computation that just relies on search object's depth
+  private static class JPFDepthComputation implements DepthComputation {
+    @Override
+    public long compute(Search search) {
+      return search.getDepth();
+    }
+
+    @Override
+    public void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod) {
+      // Ignore
+    }
+  }
+
+  private static class MeasuredMethodDepthComputation implements DepthComputation {
+
+    private final Set<String> measuredMethods;
+    private static final int DEPTH_NOT_SET = -1;
+    private int startDepth = DEPTH_NOT_SET;
+
+    public MeasuredMethodDepthComputation(Set<String> measuredMethods) {
+      this.measuredMethods = measuredMethods;
+    }
+
+    @Override
+    public long compute(Search search) {
+      if(startDepth == DEPTH_NOT_SET) {
+        String msg = "Start depth has not been set. " +
+            "Maybe measured method has incorrectly been set?";
+        LOGGER.severe(msg);
+        throw new RuntimeException(msg);
+      }
+
+      int realDepth = search.getDepth() - startDepth;
+
+      return realDepth;
+    }
+
+    @Override
+    public void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod) {
+      String meth = enteredMethod.getBaseName();
+      if(measuredMethods.contains(meth)) {
+        int currentDepth = vm.getSearch().getDepth();
+        if(this.startDepth != DEPTH_NOT_SET) {
+          LOGGER.fine("Start depth is being set again. Was " + this.startDepth + " will be set " +
+              "to " + currentDepth);
+        }
+        this.startDepth = currentDepth;
+      }
+    }
+  }
+
+
+  private final DepthComputation depthComputation;
+
+  public DepthCostModel(Config jpfConfig) {
+    if (jpfConfig.hasValue(Options.MEASURED_METHOD)) {
+      String[] measMeth = jpfConfig.getStringArray(Options.MEASURED_METHOD);
+      Set<String> measuredMethods = extractSimpleMethodNames(measMeth);
+      this.depthComputation = new MeasuredMethodDepthComputation(measuredMethods);
+    } else {
+      //Just default to JPF's notion of depth
+      this.depthComputation = new JPFDepthComputation();
+    }
+  }
+
+  private static Set<String> extractSimpleMethodNames(String[] jpfMethodSpecs) {
+
+    //TODO: This also means that we do not distinguish between overloaded methods
+    String[] processedMethods = new String[jpfMethodSpecs.length];
+    System.arraycopy(jpfMethodSpecs, 0, processedMethods, 0, jpfMethodSpecs.length);
+    for (int i = 0; i < jpfMethodSpecs.length; i++) {
+      String meth = jpfMethodSpecs[i];
+      int sigBegin = meth.indexOf('(');
+      if (sigBegin >= 0)
+        processedMethods[i] = meth.substring(0, sigBegin);
+    }
+    return new HashSet<>(Arrays.asList(processedMethods));
   }
 
   @Override
-  public void stateBacktracked(Search search) {
-
+  public void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod) {
+    // Forward event to the actual depth computation
+    this.depthComputation.methodEntered(vm, currentThread, enteredMethod);
   }
 
   @Override
-  public void instructionExecuted(VM vm, ThreadInfo currentThread,
-                                  Instruction nextInstruction, Instruction executedInstruction) {
+  public long getCost(Search search) {
+    return depthComputation.compute(search);
+  }
+
+  @Override
+  public String getCostName() {
+    return "Depth";
+  }
+
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {
 
   }
 
@@ -63,16 +168,17 @@ public class DepthCostModel implements CostModel {
   }
 
   @Override
-  public long getCost(Search search) {
-    // We could use search.getDepth() here, but that would include other ChoiceGenerators as
-    // well, notably ThreadChoiceFromSet, thus there would be a discrepancy in the paths being
-    // captured and the depth (path would always be shorter than the depth reported here)
-    return search.getVM()
-        .getChoiceGeneratorsOfType(PCChoiceGenerator.class).length;
+  public void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG) {
+
   }
 
   @Override
-  public String getCostName() {
-    return "Depth";
+  public void stateBacktracked(Search search) {
+
+  }
+
+  @Override
+  public void methodExited(VM vm, ThreadInfo currentThread, MethodInfo exitedMethod) {
+
   }
 }

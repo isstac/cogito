@@ -29,6 +29,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
@@ -43,6 +44,9 @@ public interface CostModel {
       nextInstruction, Instruction executedInstruction);
   void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject);
   void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject);
+
+  void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod);
+  void methodExited (VM vm, ThreadInfo currentThread, MethodInfo exitedMethod);
 
   long getCost(Search search);
 

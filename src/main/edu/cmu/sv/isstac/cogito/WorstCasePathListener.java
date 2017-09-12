@@ -37,6 +37,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
@@ -71,6 +72,15 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
     this.costModel.objectCreated(vm, currentThread, newObject);
   }
 
+  @Override
+  public void methodEntered(VM vm, ThreadInfo currentThread, MethodInfo enteredMethod) {
+    costModel.methodEntered(vm, currentThread, enteredMethod);
+  }
+
+  @Override
+  public void methodExited(VM vm, ThreadInfo currentThread, MethodInfo exitedMethod) {
+    costModel.methodExited(vm, currentThread, exitedMethod);
+  }
 
   @Override
   public void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject) {

@@ -65,6 +65,9 @@ public class Options {
 
 
   //Exposed
+  public static final String VISUALIZE = CONFIG_PREFIX + ".visualize";
+  public static final boolean DEFAULT_VISUALIZE = false;
+
   public static final String TRAINING_TARGET_ARGS = TRAINING_PREFIX + TARGET_ARGS;
   public static final String PREDICTION_TARGET_ARGS = PREDICTION_PREFIX + TARGET_ARGS;
 

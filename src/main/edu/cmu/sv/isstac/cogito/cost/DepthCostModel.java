@@ -70,4 +70,9 @@ public class DepthCostModel implements CostModel {
     return search.getVM()
         .getChoiceGeneratorsOfType(PCChoiceGenerator.class).length;
   }
+
+  @Override
+  public String getCostName() {
+    return "Depth";
+  }
 }

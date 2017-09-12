@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2017 The ISSTAC Authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,17 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.cost;
-
-import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.VM;
+package edu.cmu.sv.isstac.cogito.fitting;
 
 /**
  * @author Kasper Luckow
+ *
  */
-public interface CostModel {
-
-  void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG);
-  void stateBacktracked(Search search);
-  void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction
-      nextInstruction, Instruction executedInstruction);
-  void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject);
-  void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject);
-
-  long getCost(Search search);
-
-  String getCostName();
+public class TrendModelData {
+  final TrendLine trendLine;
+  final String desc;
+  public TrendModelData(TrendLine trend, String desc) {
+    this.trendLine = trend;
+    this.desc = desc;
+  }
 }

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2017 The ISSTAC Authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,21 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.cost;
+package edu.cmu.sv.isstac.cogito.fitting;
 
-import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.VM;
+import com.google.common.base.Predicate;
 
 /**
  * @author Kasper Luckow
+ * From http://stackoverflow.com/questions/17592139/trend-lines-regression-curve-fitting-java-library
  */
-public interface CostModel {
+public interface TrendLine {
 
-  void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG);
-  void stateBacktracked(Search search);
-  void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction
-      nextInstruction, Instruction executedInstruction);
-  void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject);
-  void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject);
-
-  long getCost(Search search);
-
-  String getCostName();
+  public Predicate<Double> getDomainPredicate();
+  public Predicate<Double> getRangePredicate();
+  public void setValues(double[] y, double[] x);
+  public double predict(double inputSize);
+  public String getFunction();
+  public double getRSquared();
+  public double getAdjustedRSquared();
 }

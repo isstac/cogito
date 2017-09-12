@@ -24,17 +24,27 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import org.jfree.data.xy.XYSeries;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
+import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
+import edu.cmu.sv.isstac.cogito.fitting.FunctionFitter;
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
+import edu.cmu.sv.isstac.cogito.ml.PredictionStatistics;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import edu.cmu.sv.isstac.cogito.structure.Path;
+import edu.cmu.sv.isstac.cogito.visualization.Chart;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFShell;
@@ -43,6 +53,8 @@ import gov.nasa.jpf.JPFShell;
  * @author Kasper Luckow
  */
 public class Cogito implements JPFShell {
+
+  //TODO: Refactor this class...
 
   private final Config config;
 
@@ -65,12 +77,11 @@ public class Cogito implements JPFShell {
     WorstCasePathListener.Factory wcpListenerFactory =
         new WorstCasePathListener.Factory(costModel);
 
-
     /*
      * Phase 1: Collect all max paths for input sizes lower-upper.
      */
-    int[] inputSizes = config.getIntArray(Options.TRAINING_TARGET_ARGS);
-    int lower = inputSizes[0], upper = inputSizes[1];
+    int[] trainingInputSizes = config.getIntArray(Options.TRAINING_TARGET_ARGS);
+    int lower = trainingInputSizes[0], upper = trainingInputSizes[1];
     for(int inputSize = lower; inputSize <= upper; inputSize++) {
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
 
@@ -79,7 +90,8 @@ public class Cogito implements JPFShell {
       jpf.addListener(wcpListener);
       jpf.run();
 
-      maxPaths.addAll(wcpListener.getMaxPaths());
+      Set<Path> paths = wcpListener.getMaxPaths();
+      maxPaths.addAll(paths);
     }
 
     // Generate training data
@@ -96,10 +108,12 @@ public class Cogito implements JPFShell {
      */
     int maxInputSize = config.getInt(Options.PREDICTION_TARGET_ARGS);
 
-    //Refactor
-    long[] costs = new long[maxInputSize];
-    for(int i = 1; i < maxInputSize; i++) {
-      config.setProperty("target.args", i + "");
+    double[] xs = new double[maxInputSize];
+    double[] ys = new double[maxInputSize];
+    int idx = 0;
+
+    for(int inputSize = 1; inputSize <= maxInputSize; inputSize++) {
+      config.setProperty("target.args", inputSize + "");
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
       GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
       JPF guidedJPF = new JPF(config);
@@ -107,12 +121,40 @@ public class Cogito implements JPFShell {
       guidedJPF.addListener(wcpListener);
 
       guidedJPF.run();
+      long maxCost = wcpListener.getMaxCost();
 
-      costs[i] = wcpListener.getMaxCost();
+      xs[idx] = inputSize;
+      ys[idx] = maxCost;
+      idx++;
     }
 
-    String costStr = Arrays.toString(costs).replace(", ", "\n");
+    // Generate chart
+    Chart.ChartBuilder chartBuilder = new Chart.ChartBuilder("Costs per input size",
+        "Input Size",
+        costModel.getCostName());
 
-    System.out.println(costStr);
+    Collection<DataSeries> predictionSeries = FunctionFitter.computePredictionSeries(xs, ys,
+        (int)(xs.length * 1.5));
+
+    for(DataSeries series : predictionSeries) {
+      chartBuilder.addSeries(series);
+    }
+
+    DataSeries rawSeries = new DataSeries("Raw", xs.length);
+    for(int i = 0; i < xs.length; i++) {
+      rawSeries.add(xs[i], ys[i]);
+    }
+    chartBuilder.setRawSeries(rawSeries);
+
+    Chart chart = chartBuilder.build();
+    chart.setPreferredSize(new Dimension(1024, 768));
+    chart.pack();
+    chart.setVisible(true);
+
+
+    System.out.println("Statistics: ");
+    for(PredictionStatistics statistics : classifier.getStatistics().values()) {
+      System.out.println(statistics.toString());
+    }
   }
 }

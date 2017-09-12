@@ -24,12 +24,16 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
@@ -38,6 +42,8 @@ import gov.nasa.jpf.vm.VM;
  * @author Kasper Luckow
  */
 public class GuidanceListener extends PropertyListenerAdapter {
+
+  private static Logger LOGGER = JPFLogger.getLogger(GuidanceListener.class.getName());
 
   private final DataGenerator dataGenerator;
   private final LogisticRegressionClassifier classifier;
@@ -52,24 +58,29 @@ public class GuidanceListener extends PropertyListenerAdapter {
     ChoiceGenerator<?> cg = vm.getSystemState().getChoiceGenerator();
     if(cg instanceof PCChoiceGenerator) {
 
-
       Instruction instruction = currentCG.getInsn();
       Conditional conditional = Conditional.createFrom(instruction);
 
-      ChoiceGenerator<?> prevCg = cg.getPreviousChoiceGeneratorOfType(PCChoiceGenerator.class);
+      //If there is no classifier for the conditional, then exploratiopn degenerates to
+      // exhaustive exploration at that choice
+      if(this.classifier.hasClassifierFor(conditional)) {
 
-      //Check for null and create empty path
-      Path path = Path.createFrom(prevCg);
-      double[] data = dataGenerator.generateFeatures(path);
+        ChoiceGenerator<?> prevCg = cg.getPreviousChoiceGeneratorOfType(PCChoiceGenerator.class);
 
+        //Check for null and create empty path
+        Path path = Path.createFrom(prevCg);
+        double[] data = dataGenerator.generateFeatures(path);
 
+        //TODO: Assume for now that there are only two classes
+        double[] posterior = new double[2];
 
-      //TODO: Assume for now that there are only two classes
-      double[] posterior = new double[2];
+        int choice = classifier.predict(conditional, data, posterior);
+        LOGGER.fine("Predict: " + choice + " for " + conditional.toString() + ". Probabilities "
+            + Arrays.toString(posterior));
 
-      int choice = classifier.predict(conditional, data, posterior);
-//      System.out.println("Posterior: " + Arrays.toString(posterior));
-      cg.select(choice);
+        // Select the choice predicted by the classifier
+        cg.select(choice);
+      }
     }
   }
 }

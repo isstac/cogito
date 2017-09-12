@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2017 The ISSTAC Authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,62 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.cost;
-
-import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.VM;
+package edu.cmu.sv.isstac.cogito.fitting;
 
 /**
  * @author Kasper Luckow
  */
-public interface CostModel {
+public class DataSeries {
+  private final double[] xs;
+  private final double[] ys;
+  int idx = 0;
 
-  void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG);
-  void stateBacktracked(Search search);
-  void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction
-      nextInstruction, Instruction executedInstruction);
-  void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject);
-  void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject);
+  private final String seriesName;
+  private String r2;
+  private String function;
 
-  long getCost(Search search);
+  public DataSeries(String seriesName, int size) {
+    this.seriesName = seriesName;
+    this.xs = new double[size];
+    this.ys = new double[size];
+  }
 
-  String getCostName();
+
+  public String getSeriesName() {
+    return seriesName;
+  }
+
+  public void add(double x, double y) {
+    xs[idx] = x;
+    ys[idx] = y;
+    idx++;
+  }
+
+  public double[] getY() {
+    return this.ys;
+  }
+
+  public double[] getX() {
+    return this.xs;
+  }
+
+  public int size() {
+    return this.xs.length;
+  }
+
+  public String getR2() {
+    return r2;
+  }
+
+  public void setR2(String r2) {
+    this.r2 = r2;
+  }
+
+  public String getFunction() {
+    return function;
+  }
+
+  public void setFunction(String function) {
+    this.function = function;
+  }
 }

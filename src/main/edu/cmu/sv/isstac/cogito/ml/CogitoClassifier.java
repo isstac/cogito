@@ -25,6 +25,7 @@
 package edu.cmu.sv.isstac.cogito.ml;
 
 import java.util.Map;
+import java.util.Set;
 
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 
@@ -35,4 +36,7 @@ public interface CogitoClassifier {
 
   void train(Map<Conditional, DataSet> trainingSet);
   int predict(Conditional conditional, double[] data, double[] posterior);
+
+  // This is temporary---we can make this nicer when we refactor
+  boolean hasClassifierFor(Conditional conditional);
 }

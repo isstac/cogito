@@ -35,9 +35,14 @@ import smile.classification.SoftClassifier;
  * @author Kasper Luckow
  */
 public class LogisticRegressionClassifier implements CogitoClassifier {
-  //TODO: This is just a dummy for now
 
+  // TODO: There is a lot to refactor here: We should hoist the generation of deterministic
+  // classifiers. Any instance of CogitoClassifier should only be responsible for training
+  // classifiers for predicting "non-deterministic" choices.
   private Map<Conditional, SoftClassifier<double[]>> classifiers = new HashMap<>();
+
+  // TODO: Prediction statistics. We should probably hoist this into a decorator
+  private Map<Conditional, PredictionStatistics> predictionStatistics = new HashMap<>();
 
   @Override
   public void train(Map<Conditional, DataSet> trainingSet) {
@@ -69,7 +74,24 @@ public class LogisticRegressionClassifier implements CogitoClassifier {
   @Override
   public int predict(Conditional conditional, double[] data, double[] posterior) {
     SoftClassifier<double[]> classifier = this.classifiers.get(conditional);
+    int choice = classifier.predict(data, posterior);
+    // So ugly passing return values through the parameters here...
+    PredictionStatistics statistics = predictionStatistics.get(conditional);
+    if(statistics == null) {
+      statistics = new PredictionStatistics(conditional);
+      predictionStatistics.put(conditional, statistics);
+    }
+    statistics.addPredictionData(choice, posterior[choice]);
 
-    return classifier.predict(data, posterior);
+    return choice;
+  }
+
+  @Override
+  public boolean hasClassifierFor(Conditional conditional) {
+    return this.classifiers.containsKey(conditional);
+  }
+
+  public Map<Conditional, PredictionStatistics> getStatistics() {
+    return this.predictionStatistics;
   }
 }

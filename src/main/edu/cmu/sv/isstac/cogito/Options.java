@@ -24,11 +24,76 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import edu.cmu.sv.isstac.cogito.cost.CostModel;
+import edu.cmu.sv.isstac.cogito.cost.DepthCostModel;
+import gov.nasa.jpf.Config;
+
+import static edu.cmu.sv.isstac.cogito.Options.ConfigDescription.create;
+
 /**
  * @author Kasper Luckow
  */
 public class Options {
+  static class ConfigDescription {
+    private final String config;
+    private final String description;
 
-  public static final String CONFIG_PREFIX = "cogito";
+    public static ConfigDescription create(String config, String description) {
+      return new ConfigDescription(config, description);
+    }
+    private ConfigDescription(String config, String description) {
+      this.config = config;
+      this.description = description;
+    }
+
+    @Override
+    public String toString() {
+      return config + ": " + description;
+    }
+  }
+  private static final String CONFIG_PREFIX = "cogito";
+
+  private static final String TRAINING_PREFIX = CONFIG_PREFIX + ".training";
+  private static final String PREDICTION_PREFIX = CONFIG_PREFIX + ".prediction";
+
+  private static final String TARGET_ARGS = ".target.args";
+
+
+  //Exposed
+  public static final String VISUALIZE = CONFIG_PREFIX + ".visualize";
+  public static final boolean DEFAULT_VISUALIZE = false;
+
+  public static final String TRAINING_TARGET_ARGS = TRAINING_PREFIX + TARGET_ARGS;
+  public static final String PREDICTION_TARGET_ARGS = PREDICTION_PREFIX + TARGET_ARGS;
+
   public static final String COST_MODEL = CONFIG_PREFIX + ".costmodel";
+  public static final String DEFAULT_COST_MODEL = DepthCostModel.class.getName();
+
+
+  //List of options
+  private static List<ConfigDescription> configs = new ArrayList<>();
+  static {
+    configs.add(create(TRAINING_TARGET_ARGS,
+        "Range of input sizes over which training data will be collection. Use format from,to"));
+    configs.add(create(PREDICTION_TARGET_ARGS,
+        "Maximum input size for which " + Cogito.class.getName() +
+            " will perform guided search by the trained machine learning model"));
+    configs.add(create(COST_MODEL,
+        "Cost model to use. Must be an implementation of " + CostModel.class.getCanonicalName() +
+        ". Default is " + DEFAULT_COST_MODEL));
+  }
+
+  public static boolean valid(Config config) {
+    return config.hasValue(TRAINING_TARGET_ARGS)
+        && config.hasValue(PREDICTION_TARGET_ARGS);
+  }
+
+  public static void printConfigurations() {
+    configs.forEach(System.out::println);
+  }
 }

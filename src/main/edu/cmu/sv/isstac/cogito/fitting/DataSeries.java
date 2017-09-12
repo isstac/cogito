@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2017 The ISSTAC Authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,57 +22,62 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito;
-
-import com.google.common.base.Objects;
-
-import java.util.Iterator;
-import java.util.Map;
+package edu.cmu.sv.isstac.cogito.fitting;
 
 /**
  * @author Kasper Luckow
  */
-public class Decision {
+public class DataSeries {
+  private final double[] xs;
+  private final double[] ys;
+  int idx = 0;
 
-  private final Conditional cond;
-  private final int choice;
+  private final String seriesName;
+  private String r2;
+  private String function;
 
-  public static Decision createFrom(Conditional cond, int choice) {
-    //Maybe we should cache the objects. Profile this
-    return new Decision(cond, choice);
+  public DataSeries(String seriesName, int size) {
+    this.seriesName = seriesName;
+    this.xs = new double[size];
+    this.ys = new double[size];
   }
 
-  private Decision(Conditional cond, int choice) {
-    this.cond = cond;
-    this.choice = choice;
+
+  public String getSeriesName() {
+    return seriesName;
   }
 
-  public Conditional getCond() {
-    return cond;
+  public void add(double x, double y) {
+    xs[idx] = x;
+    ys[idx] = y;
+    idx++;
   }
 
-  public int getChoice() {
-    return choice;
+  public double[] getY() {
+    return this.ys;
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(cond, choice);
+  public double[] getX() {
+    return this.xs;
   }
 
-  @Override
-  public boolean equals(Object other) {
-    if(other == null) return false;
-    if(!(other instanceof Decision)) return false;
-
-    Decision otherDec = (Decision)other;
-    return Objects.equal(this.cond.equals(otherDec), this.choice) &&
-           Objects.equal(this.choice, otherDec.choice);
+  public int size() {
+    return this.xs.length;
   }
 
-  @Override
-  public String toString() {
-    return cond.toString() + ":" + choice;
+  public String getR2() {
+    return r2;
   }
 
+  public void setR2(String r2) {
+    this.r2 = r2;
+  }
+
+  public String getFunction() {
+    return function;
+  }
+
+  public void setFunction(String function) {
+    this.function = function;
+  }
 }

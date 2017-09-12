@@ -24,81 +24,19 @@
 
 package edu.cmu.sv.isstac.cogito.ml;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import edu.cmu.sv.isstac.cogito.Conditional;
-import smile.classification.Classifier;
-import smile.classification.LogisticRegression;
-import smile.classification.SoftClassifier;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
 
 /**
  * @author Kasper Luckow
  */
-public class CogitoClassifier {
-  //TODO: This is just a dummy for now
+public interface CogitoClassifier {
 
-  private Map<Conditional, SoftClassifier<double[]>> classifiers = new HashMap<>();
+  void train(Map<Conditional, DataSet> trainingSet);
+  int predict(Conditional conditional, double[] data, double[] posterior);
 
-  public void train(Map<Conditional, DataSet> trainingSet) {
-    for(Map.Entry<Conditional, DataSet> entry : trainingSet.entrySet()) {
-
-      //TODO: Fix this ugliness. Do not allow this. Seriously
-      List<Integer> classes = new ArrayList<>();
-      for(int y : entry.getValue().getYs()) {
-        classes.add(y);
-      }
-      int uniqueClasses = new HashSet<>(classes).size();
-      assert uniqueClasses > 0;
-      if(uniqueClasses < 2) { //in this case the predictor can simply return the single class found
-
-        final int singleClass = classes.get(0);
-        classifiers.put(entry.getKey(), new SoftClassifier<double[]>() {
-          @Override
-          public int predict(double[] doubles, double[] doubles2) {
-            //doubles2 is the posterior prob
-            assert doubles2 != null && doubles2.length > 0;
-            doubles2[0] = 1.0;
-            return singleClass;
-          }
-
-          @Override
-          public int predict(double[] doubles) {
-            return singleClass;
-          }
-        });
-      } else {
-        //If there are more than two classes, we will train a logistic regression model
-        LogisticRegression lr = new LogisticRegression(
-            entry.getValue().getXs(),
-            entry.getValue().getYs(),
-            0.1D,
-            0.1D,
-            500);
-
-        classifiers.put(entry.getKey(), lr);
-      }
-//
-//      if(entry.getValue().getXs().length > 1) {
-//        LogisticRegression lr = new LogisticRegression(entry.getValue().getXs(), entry.getValue().getYs());
-//        double[] posterior = new double[2];
-//        int y1 = lr.predict(new double[] {1,0,1,0,1,0,0,0}, posterior);//1
-//        int y2 = lr.predict(new double[] {1,0,1,0,1,0,0,1});//1
-//        int y3 = lr.predict(new double[] {1,0,1,0,1,0,0,2});//1
-//        int y4 = lr.predict(new double[] {1,0,1,0,1,0,0,3});//0
-//        System.out.println("predict");
-//      }
-//    }
-    }
-  }
-
-  public int predict(Conditional conditional, double[] data, double[] posterior) {
-    SoftClassifier<double[]> classifier = this.classifiers.get(conditional);
-
-    return classifier.predict(data, posterior);
-  }
+  // This is temporary---we can make this nicer when we refactor
+  boolean hasClassifierFor(Conditional conditional);
 }

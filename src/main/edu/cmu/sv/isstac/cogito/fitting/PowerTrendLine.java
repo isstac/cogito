@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2017 The ISSTAC Authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,48 +22,54 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.ml;
+package edu.cmu.sv.isstac.cogito.fitting;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.base.Predicate;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.text.DecimalFormat;
 
 /**
  * @author Kasper Luckow
  */
-public class DataSet {
-  private Collection<Instance> instances = new ArrayList<>();
-  private Set<Integer> classes = new HashSet<>();
-
-  public void add(Instance instance) {
-    this.classes.add(instance.getY());
-    this.instances.add(instance);
+public class PowerTrendLine extends OLSTrendLine {
+  @Override
+  protected double[] xVector(double x) {
+    return new double[]{1,Math.log(x)};
   }
 
-  public double[][] getXs() {
-    double[][] xs = new double[instances.size()][];
-    int i = 0;
-    for(Instance instance : instances) {
-      xs[i++] = instance.getX();
-    }
-    return xs;
+  @Override
+  protected boolean logY() {return true;}
+
+  @Override
+  public String getFunction() {
+    StringBuilder functionSb = new StringBuilder();
+    DecimalFormat df = new DecimalFormat("#.00");
+    
+    double b = super.coef.getColumn(0)[1];
+    functionSb.append("e^(" + df.format(super.coef.getColumn(0)[0]))
+              .append(" + ").append(df.format(b)).append("*ln(x))");
+    return functionSb.toString();
+  }
+  
+
+  @Override
+  public Predicate<Double> getDomainPredicate() {
+    return new Predicate<Double>() {
+      @Override
+      public boolean apply(Double arg0) {
+        return arg0 > 0.0;
+      }
+    };
   }
 
-  public int[] getYs() {
-    int[] ys = new int[instances.size()];
-    int i = 0;
-    for(Instance instance : instances) {
-      ys[i++] = instance.getY();
-    }
-    return ys;
-  }
-
-  public Collection<Integer> getClasses() {
-    return Collections.unmodifiableSet(classes);
+  @Override
+  public Predicate<Double> getRangePredicate() {
+    return new Predicate<Double>() {
+      @Override
+      public boolean apply(Double arg0) {
+        return arg0 > 0.0; //weird
+      }
+    };
   }
 
 }

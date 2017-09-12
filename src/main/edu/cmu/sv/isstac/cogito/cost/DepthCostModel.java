@@ -25,6 +25,7 @@
 package edu.cmu.sv.isstac.cogito.cost;
 
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.symbc.numeric.PCChoiceGenerator;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -46,7 +47,8 @@ public class DepthCostModel implements CostModel {
   }
 
   @Override
-  public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {
+  public void instructionExecuted(VM vm, ThreadInfo currentThread,
+                                  Instruction nextInstruction, Instruction executedInstruction) {
 
   }
 
@@ -62,6 +64,15 @@ public class DepthCostModel implements CostModel {
 
   @Override
   public long getCost(Search search) {
-    return search.getDepth();
+    // We could use search.getDepth() here, but that would include other ChoiceGenerators as
+    // well, notably ThreadChoiceFromSet, thus there would be a discrepancy in the paths being
+    // captured and the depth (path would always be shorter than the depth reported here)
+    return search.getVM()
+        .getChoiceGeneratorsOfType(PCChoiceGenerator.class).length;
+  }
+
+  @Override
+  public String getCostName() {
+    return "Depth";
   }
 }

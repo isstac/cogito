@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Carnegie Mellon University.
+ * Copyright (c) 2017 The ISSTAC Authors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,58 +22,55 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.cost;
+package edu.cmu.sv.isstac.cogito.fitting;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.base.Predicate;
 
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.VM;
+import java.text.DecimalFormat;
 
 /**
  * @author Kasper Luckow
+ * TODO: check that the output of getFunction is correct
  */
-public class InstructionsModel implements CostModel {
-
-  private Map<ChoiceGenerator<?>, Long> state = new HashMap<>();
-  private long instructions = 0;
-
+public class LogTrendLine extends OLSTrendLine {
   @Override
-  public void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG) {
-    state.put(currentCG, instructions);
+  protected double[] xVector(double x) {
+    return new double[]{1,Math.log(x)};
   }
 
   @Override
-  public void stateBacktracked(Search search) {
-    instructions = state.get(search.getVM().getChoiceGenerator());
+  protected boolean logY() {
+    return false;
   }
 
   @Override
-  public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {
-    instructions++;
+  public String getFunction() {
+    StringBuilder functionSb = new StringBuilder();
+    DecimalFormat df = new DecimalFormat("#.00");
+    
+    double b = super.coef.getColumn(0)[1];
+    functionSb.append(df.format(super.coef.getColumn(0)[0]))
+              .append(" + ").append(df.format(b) + "log(x)");
+    return functionSb.toString();
   }
 
   @Override
-  public void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject) {
-
+  public Predicate<Double> getDomainPredicate() {
+    return new Predicate<Double>() {
+      @Override
+      public boolean apply(Double arg0) {
+        return arg0 > 0.0;
+      }
+    };
   }
 
   @Override
-  public void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject) {
-
-  }
-
-  @Override
-  public long getCost(Search search) {
-    return instructions;
-  }
-
-  @Override
-  public String getCostName() {
-    return "Instructions";
+  public Predicate<Double> getRangePredicate() {
+    return new Predicate<Double>() {
+      @Override
+      public boolean apply(Double arg0) {
+        return true;
+      }
+    };
   }
 }

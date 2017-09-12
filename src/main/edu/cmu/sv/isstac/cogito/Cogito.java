@@ -24,23 +24,37 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import org.jfree.data.xy.XYSeries;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 
-import edu.cmu.sv.isstac.cogito.ml.CogitoClassifier;
+import edu.cmu.sv.isstac.cogito.cost.CostModel;
+import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
+import edu.cmu.sv.isstac.cogito.fitting.FunctionFitter;
+import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
+import edu.cmu.sv.isstac.cogito.ml.PredictionStatistics;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
+import edu.cmu.sv.isstac.cogito.structure.Path;
+import edu.cmu.sv.isstac.cogito.visualization.Chart;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFShell;
-import smile.classification.LogisticRegression;
 
 /**
  * @author Kasper Luckow
  */
 public class Cogito implements JPFShell {
+
+  //TODO: Refactor this class...
 
   private final Config config;
 
@@ -50,47 +64,97 @@ public class Cogito implements JPFShell {
 
   @Override
   public void start(String[] args) {
+    if(!Options.valid(config)) {
+      Options.printConfigurations();
+      return;
+    }
 
     Collection<Path> maxPaths = new ArrayList<>();
-    int[] inputSizes = config.getIntArray("cogito.training.target.args");
 
-    for(int inputSize = inputSizes[0]; inputSize <= inputSizes[1]; inputSize++) {
-      WorstCasePathListener worstCasePathListener = new WorstCasePathListener(config);
+    CostModel costModel = config.getInstance(Options.COST_MODEL,
+        CostModel.class, Options.DEFAULT_COST_MODEL);
+
+    WorstCasePathListener.Factory wcpListenerFactory =
+        new WorstCasePathListener.Factory(costModel);
+
+    /*
+     * Phase 1: Collect all max paths for input sizes lower-upper.
+     */
+    int[] trainingInputSizes = config.getIntArray(Options.TRAINING_TARGET_ARGS);
+    int lower = trainingInputSizes[0], upper = trainingInputSizes[1];
+    for(int inputSize = lower; inputSize <= upper; inputSize++) {
+      WorstCasePathListener wcpListener = wcpListenerFactory.build();
 
       config.setProperty("target.args", inputSize + "");
       JPF jpf = new JPF(config);
-      jpf.addListener(worstCasePathListener);
+      jpf.addListener(wcpListener);
       jpf.run();
 
-      maxPaths.addAll(worstCasePathListener.getMaxPaths());
+      Set<Path> paths = wcpListener.getMaxPaths();
+      maxPaths.addAll(paths);
     }
 
-
+    // Generate training data
     DataGenerator dataGenerator = new DataGenerator();
     Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(maxPaths);
 
-    CogitoClassifier classifier = new CogitoClassifier();
+    LogisticRegressionClassifier classifier = new LogisticRegressionClassifier();
+
+    //Train classifier
     classifier.train(dataSets);
 
-    //TODO: put this into the option object
-    int maxInputSize = config.getInt("cogito.predict.target.args");
-    long[] costs = new long[maxInputSize];
-    for(int i = 1; i < maxInputSize; i++) {
-      config.setProperty("target.args", i + "");
-      WorstCasePathListener guidedWcListener = new WorstCasePathListener(config);
+    /*
+     * Phase 2: Use classifier to resolve decisions
+     */
+    int maxInputSize = config.getInt(Options.PREDICTION_TARGET_ARGS);
+
+    double[] xs = new double[maxInputSize];
+    double[] ys = new double[maxInputSize];
+    int idx = 0;
+
+    for(int inputSize = 1; inputSize <= maxInputSize; inputSize++) {
+      config.setProperty("target.args", inputSize + "");
+      WorstCasePathListener wcpListener = wcpListenerFactory.build();
       GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
       JPF guidedJPF = new JPF(config);
       guidedJPF.addListener(guidanceListener);
-      guidedJPF.addListener(guidedWcListener);
+      guidedJPF.addListener(wcpListener);
 
       guidedJPF.run();
+      long maxCost = wcpListener.getMaxCost();
 
-      costs[i] = guidedWcListener.getMaxCost();
+      xs[idx] = inputSize;
+      ys[idx] = maxCost;
+      idx++;
     }
 
-    String costStr = Arrays.toString(costs).replace(", ", "\n");
+    // Generate chart
+    Chart.ChartBuilder chartBuilder = new Chart.ChartBuilder("Costs per input size",
+        "Input Size",
+        costModel.getCostName());
 
-    System.out.println(costStr);
-    System.out.println("Done");
+    Collection<DataSeries> predictionSeries = FunctionFitter.computePredictionSeries(xs, ys,
+        (int)(xs.length * 1.5));
+
+    for(DataSeries series : predictionSeries) {
+      chartBuilder.addSeries(series);
+    }
+
+    DataSeries rawSeries = new DataSeries("Raw", xs.length);
+    for(int i = 0; i < xs.length; i++) {
+      rawSeries.add(xs[i], ys[i]);
+    }
+    chartBuilder.setRawSeries(rawSeries);
+
+    Chart chart = chartBuilder.build();
+    chart.setPreferredSize(new Dimension(1024, 768));
+    chart.pack();
+    chart.setVisible(true);
+
+
+    System.out.println("Statistics: ");
+    for(PredictionStatistics statistics : classifier.getStatistics().values()) {
+      System.out.println(statistics.toString());
+    }
   }
 }

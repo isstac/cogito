@@ -22,14 +22,13 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito;
+package edu.cmu.sv.isstac.cogito.structure;
 
-import com.sun.org.apache.bcel.internal.generic.BranchInstruction;
-
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -48,6 +47,8 @@ public class Conditional {
   private static Map<String, Map<String, Map<Integer, Conditional>>> cache = new HashMap<>();
 
   //TODO: Maybe this is premature optimization...
+  // Sadly, we cannot enforce isntances of IfInstructions, because some PCChoiceGenerators have
+  // INVOKESTATIC associated with them.
   public static Conditional createFrom(Instruction instruction) {
     String cl = getClassName(instruction);
     String mt = getMethodName(instruction);

@@ -24,11 +24,13 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.cost.DepthCostModel;
+import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.search.Search;
@@ -36,7 +38,6 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.Transition;
 import gov.nasa.jpf.vm.VM;
 
 /**
@@ -44,14 +45,25 @@ import gov.nasa.jpf.vm.VM;
  */
 public class WorstCasePathListener extends PropertyListenerAdapter {
 
+  public static class Factory {
+    private final CostModel costModel;
+
+    public Factory(CostModel costModel) {
+      this.costModel = costModel;
+    }
+
+    public WorstCasePathListener build() {
+      return new WorstCasePathListener(costModel);
+    }
+  }
+
   private final CostModel costModel;
   private long maxCost = -1;
 
-  private Set<Path> maxPaths = new HashSet<>();
+  private final Set<Path> maxPaths = new HashSet<>();
 
-  public WorstCasePathListener(Config config) {
-    this.costModel = config.getInstance(Options.COST_MODEL, CostModel.class,
-        DepthCostModel.class.getName());
+  private WorstCasePathListener(CostModel costModel) {
+    this.costModel = costModel;
   }
 
   @Override
@@ -84,13 +96,16 @@ public class WorstCasePathListener extends PropertyListenerAdapter {
   public void stateAdvanced(Search search) {
     if(search.isEndState()) {
       long cost = this.costModel.getCost(search);
-      //TODO: update cost to be Comparable instead
+
       if(cost >= maxCost) {
         if(cost > maxCost) {
           maxPaths.clear();
         }
         maxCost = cost;
-        Path maxPath = Path.createFrom(search.getVM().getChoiceGenerator());
+
+        ChoiceGenerator<?> lastCg = search.getVM().getChoiceGenerator();
+
+        Path maxPath = Path.createFrom(lastCg);
         maxPaths.add(maxPath);
       }
     }

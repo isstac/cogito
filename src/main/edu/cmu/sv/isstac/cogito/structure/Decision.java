@@ -22,58 +22,54 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.cost;
+package edu.cmu.sv.isstac.cogito.structure;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.VM;
+import com.google.common.base.Objects;
 
 /**
  * @author Kasper Luckow
  */
-public class InstructionsModel implements CostModel {
+public class Decision {
 
-  private Map<ChoiceGenerator<?>, Long> state = new HashMap<>();
-  private long instructions = 0;
+  private final Conditional cond;
+  private final int choice;
 
-  @Override
-  public void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG) {
-    state.put(currentCG, instructions);
+  public static Decision createFrom(Conditional cond, int choice) {
+    //Maybe we should cache the objects. Profile this
+    return new Decision(cond, choice);
+  }
+
+  private Decision(Conditional cond, int choice) {
+    this.cond = cond;
+    this.choice = choice;
+  }
+
+  public Conditional getCond() {
+    return cond;
+  }
+
+  public int getChoice() {
+    return choice;
   }
 
   @Override
-  public void stateBacktracked(Search search) {
-    instructions = state.get(search.getVM().getChoiceGenerator());
+  public int hashCode() {
+    return Objects.hashCode(cond, choice);
   }
 
   @Override
-  public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {
-    instructions++;
+  public boolean equals(Object other) {
+    if(other == null) return false;
+    if(!(other instanceof Decision)) return false;
+
+    Decision otherDec = (Decision)other;
+    return Objects.equal(this.cond.equals(otherDec), this.choice) &&
+           Objects.equal(this.choice, otherDec.choice);
   }
 
   @Override
-  public void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject) {
-
+  public String toString() {
+    return cond.toString() + ":" + choice;
   }
 
-  @Override
-  public void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject) {
-
-  }
-
-  @Override
-  public long getCost(Search search) {
-    return instructions;
-  }
-
-  @Override
-  public String getCostName() {
-    return "Instructions";
-  }
 }

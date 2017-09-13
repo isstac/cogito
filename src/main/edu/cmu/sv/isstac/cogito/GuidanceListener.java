@@ -69,6 +69,7 @@ public class GuidanceListener extends PropertyListenerAdapter {
 
         //Check for null and create empty path
         Path path = Path.createFrom(prevCg);
+
         double[] data = dataGenerator.generateFeatures(path);
 
         //TODO: Assume for now that there are only two classes

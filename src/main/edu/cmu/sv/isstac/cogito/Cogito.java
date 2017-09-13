@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
 import edu.cmu.sv.isstac.cogito.fitting.FunctionFitter;
+import edu.cmu.sv.isstac.cogito.ml.FullPathDataGenerator;
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
@@ -69,6 +70,9 @@ public class Cogito implements JPFShell {
       return;
     }
 
+    //Enforce no optimization of PC cg's
+    config.put("symbolic.optimizechoices", "false");
+
     Collection<Path> maxPaths = new ArrayList<>();
 
     CostModel costModel = config.getInstance(Options.COST_MODEL,
@@ -95,7 +99,7 @@ public class Cogito implements JPFShell {
     }
 
     // Generate training data
-    DataGenerator dataGenerator = new DataGenerator();
+    DataGenerator dataGenerator = new FullPathDataGenerator();
     Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(maxPaths);
 
     LogisticRegressionClassifier classifier = new LogisticRegressionClassifier();

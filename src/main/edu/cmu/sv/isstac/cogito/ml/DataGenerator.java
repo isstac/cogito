@@ -39,75 +39,9 @@ import edu.cmu.sv.isstac.cogito.structure.Path;
 /**
  * @author Kasper Luckow
  */
-public class DataGenerator {
+public interface DataGenerator {
 
-  //TODO: This class must be refactored
-
-  private Map<Conditional, Integer> dec2idx = new HashMap<>();
-  private int nextIndex = 0;
-
-  private Set<Conditional> conditionals = new HashSet<>();
-
-  public Map<Conditional, DataSet> generateTrainingData(Collection<Path> paths) {
-    for(Path p : paths) {
-      conditionals.addAll(p.getUniqueConditionals());
-    }
-
-    Map<Conditional, DataSet> datasets = new HashMap<>();
-
-    for(Path path : paths) {
-      double[] data = new double[conditionals.size() * 2];
-      for(Decision decision : path) {
-        DataSet decisionTrainingData = datasets.get(decision.getCond());
-        if(decisionTrainingData == null) {
-          decisionTrainingData = new DataSet();
-          datasets.put(decision.getCond(), decisionTrainingData);
-        }
-        Instance instance = new Instance(data, decision.getChoice());
-        decisionTrainingData.add(instance);
-
-        double[] newData = new double[conditionals.size() * 2];
-        java.lang.System.arraycopy(data, 0, newData, 0, data.length);
-        data = newData;
-
-        int idx = getIdx(decision);
-        data[idx] = data[idx] + 1;
-      }
-    }
-
-    return datasets;
-  }
-
-  public double[] generateFeatures(Path path) {
-
-    double[] data = new double[conditionals.size() * 2];
-    for(Decision decision : path) {
-      int idx = getIdx(decision);
-      data[idx] = data[idx] + 1;
-    }
-
-    return data;
-  }
-
-  private int getIdx(Decision decision) {
-
-    int conditionalIdx;
-    if(dec2idx.containsKey(decision.getCond())) {
-      conditionalIdx = dec2idx.get(decision.getCond());
-    } else {
-      conditionalIdx = nextIndex;
-      dec2idx.put(decision.getCond(), conditionalIdx);
-      nextIndex++;
-    }
-
-    int decisionIdx = toDecisionIdx(conditionalIdx, decision.getChoice());
-    return decisionIdx;
-  }
-
-  private int toDecisionIdx(int conditionalIdx, int choice) {
-    //Todo: We constrain ourselves to binary decisions now
-    Preconditions.checkArgument(choice == 0 || choice == 1);
-
-    return conditionalIdx * 2 + choice;
-  }
+  //TODO: This interface should be redesigned.
+  Map<Conditional, DataSet> generateTrainingData(Collection<Path> paths);
+  double[] generateFeatures(Path path);
 }

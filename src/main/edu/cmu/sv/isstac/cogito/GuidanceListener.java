@@ -24,7 +24,11 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import com.google.common.base.Preconditions;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
@@ -47,10 +51,19 @@ public class GuidanceListener extends PropertyListenerAdapter {
 
   private final DataGenerator dataGenerator;
   private final LogisticRegressionClassifier classifier;
+  private final Collection<PredictionFilter> predictionFilters;
 
   public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier) {
+    this(dataGenerator, classifier, new ArrayList<>());
+  }
+
+  public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier,
+                          Collection<PredictionFilter> predictionFilters) {
+    Preconditions.checkNotNull(predictionFilters);
+
     this.dataGenerator = dataGenerator;
     this.classifier = classifier;
+    this.predictionFilters = predictionFilters;
   }
 
   @Override
@@ -76,11 +89,23 @@ public class GuidanceListener extends PropertyListenerAdapter {
         double[] posterior = new double[2];
 
         int choice = classifier.predict(conditional, data, posterior);
+
+        //Check if we should skip this prediction
+        for(PredictionFilter filter : predictionFilters) {
+
+          if(filter.filterPrediction(choice, conditional, data, posterior)) {
+
+            // Exploration degenerates to exhaustive exploration here
+            return;
+          }
+        }
+
         LOGGER.fine("Predict: " + choice + " for " + conditional.toString() + ". Probabilities "
             + Arrays.toString(posterior));
 
         // Select the choice predicted by the classifier
         cg.select(choice);
+
       }
     }
   }

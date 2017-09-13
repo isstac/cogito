@@ -59,6 +59,7 @@ public class Options {
   private static final String CONFIG_PREFIX = "cogito";
 
   private static final String TRAINING_PREFIX = CONFIG_PREFIX + ".training";
+
   private static final String PREDICTION_PREFIX = CONFIG_PREFIX + ".prediction";
 
   private static final String TARGET_ARGS = ".target.args";
@@ -74,6 +75,8 @@ public class Options {
   public static final String DEFAULT_COST_MODEL = DepthCostModel.class.getName();
   public static final String MEASURED_METHOD = COST_MODEL + ".measuredmethod";
 
+  public static final String CONFIDENCE = PREDICTION_PREFIX + ".confidence";
+
   //List of options
   private static List<ConfigDescription> configs = new ArrayList<>();
   static {
@@ -82,6 +85,9 @@ public class Options {
     configs.add(create(PREDICTION_TARGET_ARGS,
         "Maximum input size for which " + Cogito.class.getName() +
             " will perform guided search by the trained machine learning model"));
+    configs.add(create(CONFIDENCE, "Specifies a threshold ]0.0;1.0] on the posterior probability" +
+        "computed for the prediction. If the prediction is less than this value, exploration " +
+        "degenerates to exhaustive exploration at this decision. By default no filtering is made"));
     configs.add(create(COST_MODEL,
         "Cost model to use. Must be an implementation of " + CostModel.class.getCanonicalName() +
         ". Default is " + DEFAULT_COST_MODEL));

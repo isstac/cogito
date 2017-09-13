@@ -24,16 +24,11 @@
 
 package edu.cmu.sv.isstac.cogito;
 
-import org.jfree.data.xy.XYSeries;
-
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
@@ -107,6 +102,12 @@ public class Cogito implements JPFShell {
     //Train classifier
     classifier.train(dataSets);
 
+    Collection<PredictionFilter> predictionFilters = new ArrayList<>();
+    if(config.hasValue(Options.CONFIDENCE)) {
+      double confidence = config.getDouble(Options.CONFIDENCE);
+      predictionFilters.add(new ConfidenceFilter(confidence));
+    }
+
     /*
      * Phase 2: Use classifier to resolve decisions
      */
@@ -119,7 +120,9 @@ public class Cogito implements JPFShell {
     for(int inputSize = 1; inputSize <= maxInputSize; inputSize++) {
       config.setProperty("target.args", inputSize + "");
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
-      GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
+      GuidanceListener guidanceListener = new GuidanceListener(dataGenerator,
+          classifier, predictionFilters);
+
       JPF guidedJPF = new JPF(config);
       guidedJPF.addListener(guidanceListener);
       guidedJPF.addListener(wcpListener);

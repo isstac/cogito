@@ -61,9 +61,9 @@ public class DeterministicClassifier implements SoftClassifier<double[]> {
     // The probability of the deterministic choice we have selected is 1.0; for all others 0.0
     for(int i = 0; i < posteriori.length; i++) {
       if(i == deterministicChoice) {
-        posteriori[deterministicChoice] = 1.0;
+        posteriori[i] = 1.0;
       } else {
-        posteriori[deterministicChoice] = 0.0;
+        posteriori[i] = 0.0;
       }
     }
 

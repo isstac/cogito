@@ -57,7 +57,7 @@ The options for Cogito are:
 * **cogito.costmodel.measuredmethod=method name** Specifies the method at which cost will start accumulating. This is necessary when analyzing SUTs where, e.g., a data structure is being built before applying some operation on it (such as searching in a binary tree with symbolic elements).
 * **cogito.costmodel=class name** The fully qualified class name for an implementation of `edu.cmu.sv.isstac.cogito.cost.CostModel` that specifies which cost model to use. Defaults to `DepthCostModel` if left unspecified.
 * **cogito.prediction.confidence=double** a value ]0.0;1.0] specifying the threshold for the posterior probabilities of the predictions made by the classifiers. If the posterior probabilities are not greater than this number, exploration degenerates to an exhaustive analysis at that decision (i.e. all choices will be explored). By default there is no threshold, i.e. the prediction with posterior probability >0.5 will be selected (assuming binary choices).
-
+* **cogito.output** Will output statistics about the training and guided search runs to CSV files. The traning (guided search) statistics will be located on the specified path in a file with name `target_training.csv` (`target_guidance.csv`) where `target` is the SUT name. 
 
 
 ## LICENSE

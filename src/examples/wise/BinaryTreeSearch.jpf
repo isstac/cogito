@@ -1,0 +1,18 @@
+@using cogito
+shell=edu.cmu.sv.isstac.cogito.Cogito
+#cogito.costmodel=edu.cmu.sv.isstac.cogito.cost.InstructionsModel
+
+cogito.training.target.args=2,6
+cogito.prediction.target.args=60
+
+symbolic.dp=z3inc
+listener=gov.nasa.jpf.symbc.numeric.solvers.IncrementalListener
+
+target=wise.BinaryTreeSearch
+
+#search.min_free=50M
+
+symbolic.method=wise.BinaryTreeSearch$BinaryTree.search(con);wise.BinaryTreeSearch$BinaryTree.insert(con)
+cogito.costmodel.measuredmethod=wise.BinaryTreeSearch$BinaryTree.search
+
+symbolic.optimizechoices=false

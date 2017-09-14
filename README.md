@@ -1,6 +1,13 @@
 # Cogito
-A brain for symbolic execution.
+> A brain for symbolic execution.
 
+Cogito is a tool for exploring the most costly paths of programs with input configurations that would otherwise be intractable for exhaustive analysis. It can therefore be used to derive complexity bounds.
+
+Cogito applies a two-phase approach. In phase 1 it conducts exhaustive exploration for a range of input sizes and collects all the paths with maximum cost. These paths become *training data* for a classification algorithm (currently logistic regression), that gets associated with each conditional statement in the program. The classifiers are thus trained to predict which choice to make at the condition given the current path (i.e. sequence of prior decisions) in order to explore the path with maximum cost. 
+
+In phase 2, symbolic execution is again performed, but whenever a condition with symbolic predicate is encountered, the classification algorithm is used for deciding which choice to make. This enables symbolic execution to scale far beyond the capabilities of exhaustive analysis, since many choices are pruned. 
+
+Cogito records the maximum cost found for input size 1,..,N (where N is provided by the user) during the guided search. This data is used with OLS regression to fit functions corresponding to the common complexity classes. The functions can be visualized and analyzed for deriving complexity bounds, finding performance issues, etc.
 
 ## Installation
 Make sure that `jpf-core` and `jpf-symbc` are properly installed.

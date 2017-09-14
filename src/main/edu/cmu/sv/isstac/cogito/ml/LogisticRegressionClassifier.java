@@ -58,13 +58,10 @@ public class LogisticRegressionClassifier implements CogitoClassifier {
         classifiers.put(entry.getKey(), DeterministicClassifier.create(singleClass));
       } else {
 
-        //If there are more than two classes, we will train a logistic regression model
+        //If there are more than 1 class, we will train a logistic regression model
         LogisticRegression lr = new LogisticRegression(
             entry.getValue().getXs(),
-            entry.getValue().getYs(),
-            0.1D,
-            0.1D,
-            500);
+            entry.getValue().getYs());
 
         classifiers.put(entry.getKey(), lr);
       }

@@ -53,6 +53,9 @@ public class GuidanceListener extends PropertyListenerAdapter {
   private final LogisticRegressionClassifier classifier;
   private final Collection<PredictionFilter> predictionFilters;
 
+  //Statistics
+  private final GuidanceStatistics statistics = new GuidanceStatistics();
+
   public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier) {
     this(dataGenerator, classifier, new ArrayList<>());
   }
@@ -64,6 +67,10 @@ public class GuidanceListener extends PropertyListenerAdapter {
     this.dataGenerator = dataGenerator;
     this.classifier = classifier;
     this.predictionFilters = predictionFilters;
+  }
+
+  public GuidanceStatistics getStatistics() {
+    return this.statistics;
   }
 
   @Override
@@ -94,7 +101,7 @@ public class GuidanceListener extends PropertyListenerAdapter {
         for(PredictionFilter filter : predictionFilters) {
 
           if(filter.filterPrediction(choice, conditional, data, posterior)) {
-
+            statistics.incrementFilteredPredictedResolutions();
             // Exploration degenerates to exhaustive exploration here
             return;
           }
@@ -106,6 +113,20 @@ public class GuidanceListener extends PropertyListenerAdapter {
         // Select the choice predicted by the classifier
         cg.select(choice);
 
+        // Update some statistics here
+        if(Math.abs(posterior[choice] - 1.0) <= 0.00001d) {
+          //If this is the case, we regard it as a deterministic resolution
+
+          //TODO: A better way is maybe to check if an instance of DeterministicClassifier was used
+          statistics.incrementDeterministicResolutions();
+        } else {
+          statistics.incrementPredictedResolutions();
+        }
+
+      } else {
+
+        //No resolution could be made. Degenerate to exhaustive here
+        statistics.incrementNondeterministicResolutions();
       }
     }
   }

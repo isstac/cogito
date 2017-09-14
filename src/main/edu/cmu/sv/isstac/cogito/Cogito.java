@@ -25,10 +25,7 @@
 package edu.cmu.sv.isstac.cogito;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
@@ -117,6 +114,8 @@ public class Cogito implements JPFShell {
     double[] ys = new double[maxInputSize];
     int idx = 0;
 
+    Map<Integer, GuidanceStatistics> guidanceStatistics = new HashMap<>();
+
     for(int inputSize = 1; inputSize <= maxInputSize; inputSize++) {
       config.setProperty("target.args", inputSize + "");
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
@@ -129,6 +128,9 @@ public class Cogito implements JPFShell {
 
       guidedJPF.run();
       long maxCost = wcpListener.getMaxCost();
+
+      // Store guidance statistics
+      guidanceStatistics.put(inputSize, guidanceListener.getStatistics());
 
       xs[idx] = inputSize;
       ys[idx] = maxCost;
@@ -158,10 +160,24 @@ public class Cogito implements JPFShell {
     chart.pack();
     chart.setVisible(true);
 
+    //TODO: We should write all these statistics to a file instead
+    System.out.println("--------------------------------------------------------");
+    System.out.println("Classifier Statistics:");
+    for(PredictionStatistics classifierStatistics : classifier.getStatistics().values()) {
+      System.out.println(classifierStatistics.toString());
+    }
+    System.out.println("--------------------------------------------------------");
 
-    System.out.println("Statistics: ");
-    for(PredictionStatistics statistics : classifier.getStatistics().values()) {
-      System.out.println(statistics.toString());
+    System.out.println("Guidance Statistics: ");
+    //TODO: fix this ugliness
+    java.util.List<Map.Entry<Integer, GuidanceStatistics>> entries =
+        new LinkedList<>(guidanceStatistics.entrySet());
+    // Sort by input size
+    Collections.sort(entries, (o1, o2) -> o1.getKey() - o2.getKey());
+
+    for(Map.Entry<Integer, GuidanceStatistics> statisticsEntry : entries) {
+      System.out.println("Input size: " + statisticsEntry.getKey());
+      System.out.println(statisticsEntry.getValue().toString());
     }
   }
 }

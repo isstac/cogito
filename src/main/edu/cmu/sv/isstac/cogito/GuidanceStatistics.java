@@ -24,6 +24,12 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import edu.cmu.sv.isstac.cogito.ml.PredictionStatistics;
+import edu.cmu.sv.isstac.cogito.structure.Conditional;
+
 /**
  * @author Kasper Luckow
  */
@@ -33,6 +39,8 @@ public class GuidanceStatistics {
   private int deterministicResolutions = 0;
   private int nondeterministicResolutions = 0;
   private int filteredPredictedResolutions = 0;
+
+  private Map<Conditional, PredictionStatistics> predictionStatistics = new HashMap<>();
 
   public int getPredictedResolutions() {
     return predictedResolutions;
@@ -64,6 +72,19 @@ public class GuidanceStatistics {
 
   public void incrementFilteredPredictedResolutions() {
     filteredPredictedResolutions++;
+  }
+
+  public void addPredictionResult(Conditional conditional, int choice, double posterior) {
+    PredictionStatistics predictionStatistics = this.predictionStatistics.get(conditional);
+    if(predictionStatistics == null) {
+      predictionStatistics = new PredictionStatistics(conditional);
+      this.predictionStatistics.put(conditional, predictionStatistics);
+    }
+    predictionStatistics.addPredictionData(choice, posterior);
+  }
+
+  public Map<Conditional, PredictionStatistics> getPredictionStatistics() {
+    return this.predictionStatistics;
   }
 
   @Override

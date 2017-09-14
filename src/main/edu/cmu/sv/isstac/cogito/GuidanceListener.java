@@ -29,10 +29,13 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
+import edu.cmu.sv.isstac.cogito.ml.PredictionStatistics;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import edu.cmu.sv.isstac.cogito.structure.Path;
 import gov.nasa.jpf.PropertyListenerAdapter;
@@ -54,7 +57,7 @@ public class GuidanceListener extends PropertyListenerAdapter {
   private final Collection<PredictionFilter> predictionFilters;
 
   //Statistics
-  private final GuidanceStatistics statistics = new GuidanceStatistics();
+  private final GuidanceStatistics guidanceStatistics = new GuidanceStatistics();
 
   public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier) {
     this(dataGenerator, classifier, new ArrayList<>());
@@ -70,7 +73,7 @@ public class GuidanceListener extends PropertyListenerAdapter {
   }
 
   public GuidanceStatistics getStatistics() {
-    return this.statistics;
+    return this.guidanceStatistics;
   }
 
   @Override
@@ -101,7 +104,7 @@ public class GuidanceListener extends PropertyListenerAdapter {
         for(PredictionFilter filter : predictionFilters) {
 
           if(filter.filterPrediction(choice, conditional, data, posterior)) {
-            statistics.incrementFilteredPredictedResolutions();
+            guidanceStatistics.incrementFilteredPredictedResolutions();
             // Exploration degenerates to exhaustive exploration here
             return;
           }
@@ -118,15 +121,18 @@ public class GuidanceListener extends PropertyListenerAdapter {
           //If this is the case, we regard it as a deterministic resolution
 
           //TODO: A better way is maybe to check if an instance of DeterministicClassifier was used
-          statistics.incrementDeterministicResolutions();
+          guidanceStatistics.incrementDeterministicResolutions();
         } else {
-          statistics.incrementPredictedResolutions();
+
+          // Otherwise we update the predicted resolution statistics
+          guidanceStatistics.addPredictionResult(conditional, choice, posterior[choice]);
+          guidanceStatistics.incrementPredictedResolutions();
         }
 
       } else {
 
         //No resolution could be made. Degenerate to exhaustive here
-        statistics.incrementNondeterministicResolutions();
+        guidanceStatistics.incrementNondeterministicResolutions();
       }
     }
   }

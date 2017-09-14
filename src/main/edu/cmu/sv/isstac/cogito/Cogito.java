@@ -24,12 +24,10 @@
 
 package edu.cmu.sv.isstac.cogito;
 
-import java.awt.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
-import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
-import edu.cmu.sv.isstac.cogito.fitting.FunctionFitter;
 import edu.cmu.sv.isstac.cogito.ml.FullPathDataGenerator;
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
@@ -37,16 +35,19 @@ import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
 import edu.cmu.sv.isstac.cogito.ml.PredictionStatistics;
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
 import edu.cmu.sv.isstac.cogito.structure.Path;
-import edu.cmu.sv.isstac.cogito.visualization.Chart;
+import edu.cmu.sv.isstac.cogito.visualization.ResultsOutputter;
+import edu.cmu.sv.isstac.cogito.visualization.Visualizer;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFShell;
+import gov.nasa.jpf.util.JPFLogger;
 
 /**
  * @author Kasper Luckow
  */
 public class Cogito implements JPFShell {
 
+  private static final Logger LOGGER = JPFLogger.getLogger(Cogito.class.getName());
   //TODO: Refactor this class...
 
   private final Config config;
@@ -64,21 +65,58 @@ public class Cogito implements JPFShell {
 
     //Enforce no optimization of PC cg's
     config.put("symbolic.optimizechoices", "false");
-
-    Collection<Path> maxPaths = new ArrayList<>();
+    LOGGER.info("Setting symbolic.optimizechoices=false");
 
     CostModel costModel = config.getInstance(Options.COST_MODEL,
         CostModel.class, Options.DEFAULT_COST_MODEL);
 
+    // Gather all analysis event observers
+    Collection<AnalysisEventObserver> analysisObservers = new HashSet<>();
+
+    if(config.hasValue(Options.EVENT_OBSERVER)) {
+      Collection<AnalysisEventObserver> observers = config.getInstances(Options.EVENT_OBSERVER,
+          AnalysisEventObserver.class);
+      analysisObservers.addAll(observers);
+    }
+
+    // Check if we want to visualize the results in a chart + function fitting
+    if(config.getBoolean(Options.VISUALIZE, Options.DEFAULT_VISUALIZE)) {
+      LOGGER.info("Visualizing results and applying function fitting");
+      Visualizer visualizer = new Visualizer(costModel.getCostName());
+      analysisObservers.add(visualizer);
+    }
+
+    // Check if we want to output all the data to csv files
+    if(config.hasValue(Options.OUTPUT_RESULTS)) {
+      LOGGER.info("Outputting results to CSV file");
+      String outputPath = config.getString(Options.OUTPUT_RESULTS);
+      String tgtName = config.getString("target");
+      ResultsOutputter outputter = new ResultsOutputter(outputPath, tgtName);
+      analysisObservers.add(outputter);
+    }
+
+    // Notify observers
+    analysisObservers.forEach(e -> e.analysisStart(config));
+
     WorstCasePathListener.Factory wcpListenerFactory =
         new WorstCasePathListener.Factory(costModel);
+
 
     /*
      * Phase 1: Collect all max paths for input sizes lower-upper.
      */
+
+    Collection<Path> maxPaths = new ArrayList<>();
+
     int[] trainingInputSizes = config.getIntArray(Options.TRAINING_TARGET_ARGS);
     int lower = trainingInputSizes[0], upper = trainingInputSizes[1];
+
+    analysisObservers.forEach(e -> e.trainingStart());
     for(int inputSize = lower; inputSize <= upper; inputSize++) {
+      int finalInputSize = inputSize;
+      // Notify observers
+      analysisObservers.forEach(e -> e.trainingInputSizeStart(finalInputSize));
+
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
 
       config.setProperty("target.args", inputSize + "");
@@ -88,7 +126,12 @@ public class Cogito implements JPFShell {
 
       Set<Path> paths = wcpListener.getMaxPaths();
       maxPaths.addAll(paths);
+
+      // Notify observers
+      analysisObservers.forEach(e -> e.trainingInputSizeDone(finalInputSize, paths, wcpListener
+          .getMaxCost(), jpf));
     }
+    analysisObservers.forEach(e -> e.trainingDone());
 
     // Generate training data
     DataGenerator dataGenerator = new FullPathDataGenerator();
@@ -116,7 +159,12 @@ public class Cogito implements JPFShell {
 
     Map<Integer, GuidanceStatistics> guidanceStatistics = new HashMap<>();
 
+    analysisObservers.forEach(e -> e.guidanceStart());
     for(int inputSize = 1; inputSize <= maxInputSize; inputSize++) {
+      int finalInputSize = inputSize;
+      // Notify observers
+      analysisObservers.forEach(e -> e.guidanceInputSizeStart(finalInputSize));
+
       config.setProperty("target.args", inputSize + "");
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
       GuidanceListener guidanceListener = new GuidanceListener(dataGenerator,
@@ -132,52 +180,18 @@ public class Cogito implements JPFShell {
       // Store guidance statistics
       guidanceStatistics.put(inputSize, guidanceListener.getStatistics());
 
+      // Notify observers
+      analysisObservers.forEach(e -> e.guidanceInputSizeDone(finalInputSize, wcpListener.getMaxPaths(),
+          maxCost, guidanceListener.getStatistics(), guidedJPF));
+
       xs[idx] = inputSize;
       ys[idx] = maxCost;
       idx++;
     }
+    analysisObservers.forEach(e -> e.guidanceDone());
 
-    // Generate chart
-    Chart.ChartBuilder chartBuilder = new Chart.ChartBuilder("Costs per input size",
-        "Input Size",
-        costModel.getCostName());
-
-    Collection<DataSeries> predictionSeries = FunctionFitter.computePredictionSeries(xs, ys,
-        (int)(xs.length * 1.5));
-
-    for(DataSeries series : predictionSeries) {
-      chartBuilder.addSeries(series);
-    }
-
-    DataSeries rawSeries = new DataSeries("Raw", xs.length);
-    for(int i = 0; i < xs.length; i++) {
-      rawSeries.add(xs[i], ys[i]);
-    }
-    chartBuilder.setRawSeries(rawSeries);
-
-    Chart chart = chartBuilder.build();
-    chart.setPreferredSize(new Dimension(1024, 768));
-    chart.pack();
-    chart.setVisible(true);
-
-    //TODO: We should write all these statistics to a file instead
-    System.out.println("--------------------------------------------------------");
-    System.out.println("Classifier Statistics:");
-    for(PredictionStatistics classifierStatistics : classifier.getStatistics().values()) {
-      System.out.println(classifierStatistics.toString());
-    }
-    System.out.println("--------------------------------------------------------");
-
-    System.out.println("Guidance Statistics: ");
-    //TODO: fix this ugliness
-    java.util.List<Map.Entry<Integer, GuidanceStatistics>> entries =
-        new LinkedList<>(guidanceStatistics.entrySet());
-    // Sort by input size
-    Collections.sort(entries, (o1, o2) -> o1.getKey() - o2.getKey());
-
-    for(Map.Entry<Integer, GuidanceStatistics> statisticsEntry : entries) {
-      System.out.println("Input size: " + statisticsEntry.getKey());
-      System.out.println(statisticsEntry.getValue().toString());
-    }
+    // Notify observers
+    analysisObservers.forEach(e -> e.analysisDone());
   }
+
 }

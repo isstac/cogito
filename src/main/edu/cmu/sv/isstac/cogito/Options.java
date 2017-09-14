@@ -65,8 +65,11 @@ public class Options {
   private static final String TARGET_ARGS = ".target.args";
 
   //Exposed
+  public static final String EVENT_OBSERVER = ".eventobserver";
   public static final String VISUALIZE = CONFIG_PREFIX + ".visualize";
   public static final boolean DEFAULT_VISUALIZE = false;
+
+  public static final String OUTPUT_RESULTS = CONFIG_PREFIX + ".output";
 
   public static final String TRAINING_TARGET_ARGS = TRAINING_PREFIX + TARGET_ARGS;
   public static final String PREDICTION_TARGET_ARGS = PREDICTION_PREFIX + TARGET_ARGS;
@@ -91,7 +94,14 @@ public class Options {
     configs.add(create(COST_MODEL,
         "Cost model to use. Must be an implementation of " + CostModel.class.getCanonicalName() +
         ". Default is " + DEFAULT_COST_MODEL));
-    configs.add(create(MEASURED_METHOD, "Simpple method name e.g. com.example.method that " +
+    configs.add(create(EVENT_OBSERVER,
+        "A list of classes that implement " + AnalysisEventObserver.class.getCanonicalName() +
+            ". Instances will created and will be notified about the certain event during the " +
+            "analysis"));
+    configs.add(create(OUTPUT_RESULTS, "Output data (max cost, statistics etc) from the " +
+        "exhaustive exploration (phase 1) and the guided search (phase 2) into the directory " +
+        "specified by this option."));
+    configs.add(create(MEASURED_METHOD, "Simple method name e.g. com.example.method that " +
         "specifies where cost should start accumulating. Does not support overloaded methods. " +
         "Currently only works for " + DepthCostModel.class.getName()));
     configs.add(create(VISUALIZE, "Visualize max costs for all input sizes during guided search." +

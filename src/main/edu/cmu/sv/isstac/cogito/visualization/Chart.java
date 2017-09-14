@@ -40,6 +40,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import edu.cmu.sv.isstac.cogito.Cogito;
 import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
 
 /**
@@ -80,7 +81,7 @@ public class Chart extends ApplicationFrame {
 
   public Chart(String chartTitle, String xAxisLabel, String yAxisLabel, Collection<DataSeries>
       seriesCollection, DataSeries rawSeries) {
-    super(chartTitle);
+    super(Cogito.class.getName());
 
     createSeries(chartTitle, xAxisLabel, yAxisLabel, seriesCollection, rawSeries);
 
@@ -161,7 +162,7 @@ public class Chart extends ApplicationFrame {
       for(int i = 0; i < rawSeries.getX().length; i++) {
         rawXYSeries.add(rawSeries.getX()[i], rawSeries.getY()[i]);
       }
-
+      ccDataset.addSeries(rawXYSeries);
       box2series.put(rawCheckbox, rawXYSeries);
       checkPanel.add(rawPanel);
     }

@@ -22,26 +22,13 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.ml;
-
-import com.google.common.base.Preconditions;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+package edu.cmu.sv.isstac.cogito;
 
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
-import edu.cmu.sv.isstac.cogito.structure.Decision;
-import edu.cmu.sv.isstac.cogito.structure.Path;
 
 /**
  * @author Kasper Luckow
  */
-public interface DataGenerator {
-
-  //TODO: This interface should be redesigned.
-  Map<Conditional, DataSet> generateTrainingData(Collection<Path> paths);
-  double[] generateFeatures(Path path);
+public interface PredictionFilter {
+  boolean filterPrediction(int prediction, Conditional conditional, double[] data, double[] posterior);
 }

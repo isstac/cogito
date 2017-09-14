@@ -24,7 +24,11 @@
 
 package edu.cmu.sv.isstac.cogito;
 
+import com.google.common.base.Preconditions;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
@@ -47,10 +51,26 @@ public class GuidanceListener extends PropertyListenerAdapter {
 
   private final DataGenerator dataGenerator;
   private final LogisticRegressionClassifier classifier;
+  private final Collection<PredictionFilter> predictionFilters;
+
+  //Statistics
+  private final GuidanceStatistics statistics = new GuidanceStatistics();
 
   public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier) {
+    this(dataGenerator, classifier, new ArrayList<>());
+  }
+
+  public GuidanceListener(DataGenerator dataGenerator, LogisticRegressionClassifier classifier,
+                          Collection<PredictionFilter> predictionFilters) {
+    Preconditions.checkNotNull(predictionFilters);
+
     this.dataGenerator = dataGenerator;
     this.classifier = classifier;
+    this.predictionFilters = predictionFilters;
+  }
+
+  public GuidanceStatistics getStatistics() {
+    return this.statistics;
   }
 
   @Override
@@ -69,17 +89,44 @@ public class GuidanceListener extends PropertyListenerAdapter {
 
         //Check for null and create empty path
         Path path = Path.createFrom(prevCg);
+
         double[] data = dataGenerator.generateFeatures(path);
 
         //TODO: Assume for now that there are only two classes
         double[] posterior = new double[2];
 
         int choice = classifier.predict(conditional, data, posterior);
+
+        //Check if we should skip this prediction
+        for(PredictionFilter filter : predictionFilters) {
+
+          if(filter.filterPrediction(choice, conditional, data, posterior)) {
+            statistics.incrementFilteredPredictedResolutions();
+            // Exploration degenerates to exhaustive exploration here
+            return;
+          }
+        }
+
         LOGGER.fine("Predict: " + choice + " for " + conditional.toString() + ". Probabilities "
             + Arrays.toString(posterior));
 
         // Select the choice predicted by the classifier
         cg.select(choice);
+
+        // Update some statistics here
+        if(Math.abs(posterior[choice] - 1.0) <= 0.00001d) {
+          //If this is the case, we regard it as a deterministic resolution
+
+          //TODO: A better way is maybe to check if an instance of DeterministicClassifier was used
+          statistics.incrementDeterministicResolutions();
+        } else {
+          statistics.incrementPredictedResolutions();
+        }
+
+      } else {
+
+        //No resolution could be made. Degenerate to exhaustive here
+        statistics.incrementNondeterministicResolutions();
       }
     }
   }

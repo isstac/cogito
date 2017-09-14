@@ -22,26 +22,32 @@
  * SOFTWARE.
  */
 
-package edu.cmu.sv.isstac.cogito.ml;
+package edu.cmu.sv.isstac.cogito;
 
 import com.google.common.base.Preconditions;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import edu.cmu.sv.isstac.cogito.structure.Conditional;
-import edu.cmu.sv.isstac.cogito.structure.Decision;
-import edu.cmu.sv.isstac.cogito.structure.Path;
 
 /**
  * @author Kasper Luckow
  */
-public interface DataGenerator {
+public class ConfidenceFilter implements PredictionFilter {
 
-  //TODO: This interface should be redesigned.
-  Map<Conditional, DataSet> generateTrainingData(Collection<Path> paths);
-  double[] generateFeatures(Path path);
+  private final double confidence;
+
+  public ConfidenceFilter(double confidence) {
+    Preconditions.checkArgument(confidence > 0.0d && confidence <= 1.0d);
+
+    this.confidence = confidence;
+  }
+
+  @Override
+  public boolean filterPrediction(int prediction, Conditional conditional,
+                                  double[] data, double[] posterior) {
+
+    // Get the posterior probability. If it is less than our confidence, then filter it
+    double prob = posterior[prediction];
+
+    return prob < confidence;
+  }
 }

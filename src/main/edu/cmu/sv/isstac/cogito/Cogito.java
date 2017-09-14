@@ -24,20 +24,13 @@
 
 package edu.cmu.sv.isstac.cogito;
 
-import org.jfree.data.xy.XYSeries;
-
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
+import java.util.*;
 
 import edu.cmu.sv.isstac.cogito.cost.CostModel;
 import edu.cmu.sv.isstac.cogito.fitting.DataSeries;
 import edu.cmu.sv.isstac.cogito.fitting.FunctionFitter;
+import edu.cmu.sv.isstac.cogito.ml.FullPathDataGenerator;
 import edu.cmu.sv.isstac.cogito.ml.LogisticRegressionClassifier;
 import edu.cmu.sv.isstac.cogito.ml.DataSet;
 import edu.cmu.sv.isstac.cogito.ml.DataGenerator;
@@ -69,6 +62,9 @@ public class Cogito implements JPFShell {
       return;
     }
 
+    //Enforce no optimization of PC cg's
+    config.put("symbolic.optimizechoices", "false");
+
     Collection<Path> maxPaths = new ArrayList<>();
 
     CostModel costModel = config.getInstance(Options.COST_MODEL,
@@ -95,13 +91,19 @@ public class Cogito implements JPFShell {
     }
 
     // Generate training data
-    DataGenerator dataGenerator = new DataGenerator();
+    DataGenerator dataGenerator = new FullPathDataGenerator();
     Map<Conditional, DataSet> dataSets = dataGenerator.generateTrainingData(maxPaths);
 
     LogisticRegressionClassifier classifier = new LogisticRegressionClassifier();
 
     //Train classifier
     classifier.train(dataSets);
+
+    Collection<PredictionFilter> predictionFilters = new ArrayList<>();
+    if(config.hasValue(Options.CONFIDENCE)) {
+      double confidence = config.getDouble(Options.CONFIDENCE);
+      predictionFilters.add(new ConfidenceFilter(confidence));
+    }
 
     /*
      * Phase 2: Use classifier to resolve decisions
@@ -112,16 +114,23 @@ public class Cogito implements JPFShell {
     double[] ys = new double[maxInputSize];
     int idx = 0;
 
+    Map<Integer, GuidanceStatistics> guidanceStatistics = new HashMap<>();
+
     for(int inputSize = 1; inputSize <= maxInputSize; inputSize++) {
       config.setProperty("target.args", inputSize + "");
       WorstCasePathListener wcpListener = wcpListenerFactory.build();
-      GuidanceListener guidanceListener = new GuidanceListener(dataGenerator, classifier);
+      GuidanceListener guidanceListener = new GuidanceListener(dataGenerator,
+          classifier, predictionFilters);
+
       JPF guidedJPF = new JPF(config);
       guidedJPF.addListener(guidanceListener);
       guidedJPF.addListener(wcpListener);
 
       guidedJPF.run();
       long maxCost = wcpListener.getMaxCost();
+
+      // Store guidance statistics
+      guidanceStatistics.put(inputSize, guidanceListener.getStatistics());
 
       xs[idx] = inputSize;
       ys[idx] = maxCost;
@@ -151,10 +160,24 @@ public class Cogito implements JPFShell {
     chart.pack();
     chart.setVisible(true);
 
+    //TODO: We should write all these statistics to a file instead
+    System.out.println("--------------------------------------------------------");
+    System.out.println("Classifier Statistics:");
+    for(PredictionStatistics classifierStatistics : classifier.getStatistics().values()) {
+      System.out.println(classifierStatistics.toString());
+    }
+    System.out.println("--------------------------------------------------------");
 
-    System.out.println("Statistics: ");
-    for(PredictionStatistics statistics : classifier.getStatistics().values()) {
-      System.out.println(statistics.toString());
+    System.out.println("Guidance Statistics: ");
+    //TODO: fix this ugliness
+    java.util.List<Map.Entry<Integer, GuidanceStatistics>> entries =
+        new LinkedList<>(guidanceStatistics.entrySet());
+    // Sort by input size
+    Collections.sort(entries, (o1, o2) -> o1.getKey() - o2.getKey());
+
+    for(Map.Entry<Integer, GuidanceStatistics> statisticsEntry : entries) {
+      System.out.println("Input size: " + statisticsEntry.getKey());
+      System.out.println(statisticsEntry.getValue().toString());
     }
   }
 }

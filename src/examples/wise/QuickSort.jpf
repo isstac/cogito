@@ -1,0 +1,17 @@
+@using cogito
+shell=edu.cmu.sv.isstac.cogito.Cogito
+#cogito.costmodel=edu.cmu.sv.isstac.cogito.cost.InstructionsModel
+
+cogito.training.target.args=8,8
+cogito.prediction.target.args=50
+
+
+symbolic.dp=z3
+
+target.args=8
+
+target=wise.QuickSortJDK15
+
+symbolic.method=wise.java15.util.Arrays.sort(con)
+
+symbolic.optimizechoices=false

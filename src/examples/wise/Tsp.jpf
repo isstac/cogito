@@ -1,0 +1,15 @@
+@using cogito
+shell=edu.cmu.sv.isstac.cogito.Cogito
+#cogito.costmodel=edu.cmu.sv.isstac.cogito.cost.InstructionsModel
+
+cogito.training.target.args=1,4
+cogito.prediction.target.args=10
+cogito.prediction.confidence=0.99
+
+target=wise.Tsp
+
+#symbolic.min_int=-100
+#symbolic.max_int=100
+symbolic.dp=z3
+
+symbolic.method=wise.Tsp$TspSolver.solve()

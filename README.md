@@ -12,7 +12,7 @@ Cogito records the maximum cost found for input size 1,..,N (where N is provided
 ## Installation
 Make sure that `jpf-core` and `jpf-symbc` are properly installed.
 
-To install Cogito, update your `site.properties` file (usually `~/.jpf/site.properties`) and set the `canopy` variable to point to the directory of your Cogito installation. 
+To install Cogito, update your `site.properties` file (usually `~/.jpf/site.properties`) and set the `cogito` variable to point to the directory of your Cogito installation. 
 ```
 cogito=/path/to/cogito
 ```
@@ -46,9 +46,10 @@ $ ./jpf-core/bin/jpf <path-to-jpf-file>
 ## Configuration
 Cogito has global and analysis local configuration options. Configuration of Cogito happen through the jpf file.
 
-To enable Cogito, the JPF file **must** contain the `@using` directive:
+To enable Cogito, the JPF file **must** contain the following:
 ```
 @using cogito
+shell=edu.cmu.sv.isstac.cogito.Cogito
 ```
 
 Cogito relies on the configuration options available in Java PathFinder and Symbolic PathFinder and can use the incremental solver in Symbolic PathFinder. Please consult these projects regarding configuration.
